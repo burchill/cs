@@ -1,0 +1,19 @@
+Package: cs
+Type: Package
+Title: Functions for working with Rochester's CS cluster
+Version: 0.1.0
+Author: Zachary Burchill
+Maintainer: Zachary Burchill <nah@toobusy.com>
+Description: A number of functions to make connecting to the servers a little less of a hassle.
+License: GPL-3
+LazyData: TRUE
+RoxygenNote: 6.0.1
+Roxygen: list(markdown = TRUE, roclets = c("rd", "namespace", "collate"))
+Depends:
+    dplyr    (>= 0.7.0),
+    future   (>= 1.7.0)
+Imports:
+    purrr    (>= 0.2.0),
+    rlang    (>= 0.2.0)
+Suggests:
+    parallel
