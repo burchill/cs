@@ -3,6 +3,7 @@
 \name{future_walk}
 \alias{future_walk}
 \alias{future_walk2}
+\alias{future_iwalk}
 \alias{future_pwalk}
 \title{Supply each element in a vector to a function and collect the messages, warnings, and errors}
 \usage{
@@ -10,6 +11,8 @@ future_walk(.x, .f, ..., .progress = FALSE, .options = future_options())
 
 future_walk2(.x, .y, .f, ..., .progress = FALSE,
   .options = future_options())
+
+future_iwalk(.x, .f, ..., .progress = FALSE, .options = future_options())
 
 future_pwalk(.l, .f, ..., .progress = FALSE, .options = future_options())
 }

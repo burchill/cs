@@ -3,14 +3,14 @@
 \name{default_cleanup}
 \alias{default_cleanup}
 \alias{default_filter}
-\alias{get_n_best_nodes}
+\alias{pick_n_best_nodes}
 \title{Default functions to help determine which cluster node to use}
 \usage{
 default_cleanup(df)
 
 default_filter(df, threshold = 0.7)
 
-get_n_best_nodes(df, n)
+pick_n_best_nodes(df, n)
 }
 \arguments{
 \item{df}{a dataframe of node information, as produced by \code{get_node_data}}
@@ -30,6 +30,6 @@ character columns to actual numeric columns, removing the "kb" from the columns 
 and adding a column called \code{percent_free} which is the proportion of available memory out of the total memory.
 \item \code{default_filter} simply removes nodes that aren't "free," have numbers greater than 64,
 or have a proportion of free memory (\code{percent_free}) less than a certain threshold.
-\item \code{get_n_best_nodes} returns \code{n} remaining nodes that have the most available memory.
+\item \code{pick_n_best_nodes} returns \code{n} remaining nodes that have the most available memory.
 }
 }

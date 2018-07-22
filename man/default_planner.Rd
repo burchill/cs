@@ -4,7 +4,7 @@
 \alias{default_planner}
 \title{The default way to start a cluster plan}
 \usage{
-default_planner(login_node, n, ..., use_abbreviations = TRUE)
+default_planner(login_node, n, ...)
 }
 \arguments{
 \item{login_node}{a string for the gateway login, e.g., "zachburchill@cycle1.cs.rochester.edu"}

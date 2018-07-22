@@ -113,14 +113,26 @@ bcs_planner <- function(login_node,
 #' @return By default, nothing, but possibly an expression if `goahead=FALSE`
 #' @export
 default_planner <- function(login_node, n,
-                            ...,
-                            use_abbreviations = TRUE) {
+                            ...) {
   .need_future()
+
+  get_n_best_nodes(login_node, n, ...) %>%
+    # Turn the nodes into the plan
+    nodes_to_plan(login_node, use_abbreviations = TRUE)
+}
+
+
+#' Returns the n best nodes
+#'
+#' To do: add documentation
+#'
+#' @export
+get_n_best_nodes <- function(login_node, n,
+                         ...,
+                         use_abbreviations = TRUE) {
 
   filterers <- rlang::enquos(...)
 
-
-  # Get the node information
   node_df <- get_nodes_info(login_node)
   node_df %>%
     # Make the data frame clean
@@ -128,15 +140,44 @@ default_planner <- function(login_node, n,
     # Filter out the ones that are down/overused
     default_filter() %>%
     # Presumably, we only get to use nodes 33-64...
-    filter(number < 65) %>%
+    # Nope!
+    # filter(number < 65) %>%
     # Custom filters
     filter(!!! filterers) %>%
     # Pick the n best
-    get_n_best_nodes(n) %>%
-    # Turn the nodes into the plan
-    nodes_to_plan(login_node, use_abbreviations = TRUE)
+    pick_n_best_nodes(n)
 }
-
+#' Test nodes' connectivity
+#'
+#' Returns nodes from node list that you can get a response from in `timeout_sec`. Use to filter out the bad nodes.
+#'  To-do: add docs
+#'
+#' @export
+test_nodes <- function(node_list, login_node,
+                       timeout_sec = 2) {
+  bad_nodes <- list()
+  for (n in unique(node_list)) {
+    # Sometimes you can get time-out errors
+    tryCatch(
+      {
+        plan(list(
+          tweak(remote, workers=login_node),
+          tweak(remote, workers=n)
+        ))
+        tester %2% { 1 }
+        Sys.sleep(timeout_sec)
+        if (!resolved(futureOf(tester)))
+          bad_nodes<-append(bad_nodes, n)
+      },
+      error = function(e) {
+        warning(paste0("Timeout error in node ", n))
+        bad_nodes <- append(bad_nodes, n)
+      }
+    )
+  }
+  message(paste0("Bad nodes: ", paste0(bad_nodes, collapse=", ")))
+  node_list[!(node_list %in% bad_nodes)]
+}
 
 
 #' Get the status of all the nodes
@@ -196,7 +237,7 @@ get_node_data <- function(info_string, as_df=TRUE) {
         stringr::str_split(",") %>% {
           val_pairs <- purrr::map(., function(x) {
             stringr::str_split(x,"=")}) %>%
-            pluck(1)
+            purrr::pluck(1)
           purrr::map(val_pairs, 2) %>%
             set_names(purrr::map(val_pairs, 1))
         }
@@ -228,7 +269,7 @@ get_node_data <- function(info_string, as_df=TRUE) {
 #'   and adding a column called `percent_free` which is the proportion of available memory out of the total memory.
 #' * `default_filter` simply removes nodes that aren't "free," have numbers greater than 64,
 #'   or have a proportion of free memory (`percent_free`) less than a certain threshold.
-#' * `get_n_best_nodes` returns `n` remaining nodes that have the most available memory.
+#' * `pick_n_best_nodes` returns `n` remaining nodes that have the most available memory.
 #'
 #' @param df a dataframe of node information, as produced by `get_node_data`
 #' @param threshold the threshold for the proportion of memory currently available by which to exclude nodes (e.g., 0.7 excludes nodes with less than 70\% of their memory currently available)
@@ -247,16 +288,15 @@ default_filter <- function(df,
                            threshold = 0.7) {
   df %>%
     filter(state=="free",
-           number < 64,
            percent_free >= threshold)
 }
 #' @rdname default_cleanup
 #' @export
-get_n_best_nodes <- function(df, n) {
+pick_n_best_nodes <- function(df, n) {
   nodes <- df %>%
     arrange(-availmem) %>%
     head(n)
-  if (nrow(nodes) < n) rlang::warn(paste0("Less than ", n, "nodes available (", nrow(nodes),")"))
+  if (nrow(nodes) < n) rlang::warn(paste0("Less than ", n, " nodes available (", nrow(nodes),")"))
   nodes
 }
 

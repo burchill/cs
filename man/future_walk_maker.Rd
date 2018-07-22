@@ -4,7 +4,7 @@
 \alias{.future_walk_maker}
 \title{Make your own versions of the \code{furrr} \code{future_map} functions}
 \usage{
-.future_walk_maker(.orig_function, decorator_func = collect_decorator)
+.future_walk_maker(.orig_function, decorator_func = cs::collect_decorator)
 }
 \arguments{
 \item{.orig_function}{the specific \code{future_map}-like function you want to base yours off of}
