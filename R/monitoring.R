@@ -9,7 +9,7 @@ monitor_resources_on_node <- function(username_or_command,
                                       total_checks = 10,
                                       command_maker = function(x) paste0("ps -u ",x," -o pcpu,rss,size,state,time,cmd")) {
 
-  if (!is.null(command_maker))
+  if (is.null(command_maker))
     command = username_or_command
   else
     command = command_maker(username_or_command)
@@ -62,7 +62,8 @@ resources_to_df <- function(resource_string_list,
 #' To-do: add docs
 #'
 #' @export
-monitor_cluster_resources <- function(login_node, node_list, save_path,
+monitor_cluster_resources <- function(username_or_command,
+                                      login_node, node_list, save_path,
                                       sleeping_time, total_checks, ...) {
   # in case you want to just save something,
   #   this will automaticall revert to the previous plan when done
@@ -78,7 +79,8 @@ monitor_cluster_resources <- function(login_node, node_list, save_path,
     furrr::future_map_dfr(
       unique(node_list),
       function (nodename) {
-        resources <- monitor_resources_on_node(sleeping_time = sleeping_time,
+        resources <- monitor_resources_on_node(username_or_command,
+                                               sleeping_time = sleeping_time,
                                                total_checks = total_checks)
         resources_to_df(resources$data,
                         resources$time,
