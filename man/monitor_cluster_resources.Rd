@@ -4,8 +4,8 @@
 \alias{monitor_cluster_resources}
 \title{Monitor resources use on cluster}
 \usage{
-monitor_cluster_resources(login_node, node_list, save_path, sleeping_time,
-  total_checks, ...)
+monitor_cluster_resources(username_or_command, login_node, node_list, save_path,
+  sleeping_time, total_checks, ...)
 }
 \description{
 To-do: add docs
