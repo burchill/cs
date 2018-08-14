@@ -96,7 +96,7 @@ bcs_planner <- function(login_node,
   if (free_mem < backoff_threshold) {
     on.exit(plan(oplan), add = TRUE)
     stop(paste0("% of memory available less than ",
-                       round(backoff_threshold*100), ". Backing off and reverting to previous plan"))
+                round(backoff_threshold*100), ". Backing off and reverting to previous plan"))
   }
   return_null <- NULL
 }
@@ -128,8 +128,8 @@ default_planner <- function(login_node, n,
 #'
 #' @export
 get_n_best_nodes <- function(login_node, n,
-                         ...,
-                         use_abbreviations = TRUE) {
+                             ...,
+                             use_abbreviations = TRUE) {
 
   filterers <- rlang::enquos(...)
 
@@ -149,35 +149,54 @@ get_n_best_nodes <- function(login_node, n,
 }
 #' Test nodes' connectivity
 #'
-#' Returns nodes from node list that you can get a response from in `timeout_sec`. Use to filter out the bad nodes.
-#'  To-do: add docs
+#' Test and see if a node is reachable by actually trying to connect to them.
 #'
+#' `test_node` is for individual nodes and will overwrite the previous plan. `test_nodes` takes a list of node names, tests each of them, and returns a list of the ones that work, and does not overwrite the previous plan.
+#'
+#'
+#' @param login_node a string for the gateway login, e.g., \"zachburchill@cycle1.cs.rochester.edu\"
+#' @param timeout_sec the number of seconds to wait before declaring the node dead
+#' @param nodename a string of the node to try to connect to
+#' @param node_list a list/vector of strings of node names to try to connect to
+
+#' @rdname testing_nodes
+#' @export
+test_node <- function(nodename, login_node, timeout_sec) {
+  # Sometimes you can get time-out errors
+  tryCatch(
+    {
+      plan(list(
+        tweak(remote, workers=login_node),
+        tweak(remote, workers=nodename)
+      ))
+      tester %2% { "a" }
+      Sys.sleep(timeout_sec)
+      if (resolved(futureOf(tester)) && tester=="a") return(TRUE)
+      else return(FALSE)
+    },
+    error = function(e) {
+      warning(paste0("Timeout error in node ", nodename))
+      return(FALSE)
+    }
+  )
+}
+
+#' @rdname testing_nodes
 #' @export
 test_nodes <- function(node_list, login_node,
                        timeout_sec = 2) {
-  bad_nodes <- list()
-  for (n in unique(node_list)) {
-    # Sometimes you can get time-out errors
-    tryCatch(
-      {
-        plan(list(
-          tweak(remote, workers=login_node),
-          tweak(remote, workers=n)
-        ))
-        tester %2% { 1 }
-        Sys.sleep(timeout_sec)
-        if (!resolved(futureOf(tester)))
-          bad_nodes<-append(bad_nodes, n)
-      },
-      error = function(e) {
-        warning(paste0("Timeout error in node ", n))
-        bad_nodes <- append(bad_nodes, n)
-      }
-    )
-  }
-  message(paste0("Bad nodes: ", paste0(bad_nodes, collapse=", ")))
-  node_list[!(node_list %in% bad_nodes)]
+  # After we're done getting the information, revert to the original plan
+  oplan <- plan()
+  on.exit(plan(oplan), add = TRUE)
+
+  good_nodes <- purrr::map_lgl(node_list,
+                               ~test_node(., login_node, timeout_sec))
+
+  message(paste0("Bad nodes: ", paste0(node_list[!good_nodes], collapse=", ")))
+  node_list[good_nodes]
 }
+
+
 
 
 #' Get the status of all the nodes
@@ -187,27 +206,39 @@ test_nodes <- function(node_list, login_node,
 #' into a data frame.
 #'
 #' @param login_node a string for the gateway login, e.g., \"zachburchill@cycle1.cs.rochester.edu\"
-#' @param check_node the name of any "nodeN" hostname, to get the data from
+#' @param check_node the name of any "nodeN" hostnames, to get the data from. Will iterate through until it finds one that works.
 #' @return A data frame with all the node information
 #' @export
 get_nodes_info <- function(login_node,
-                           check_node="node64") {
+                           check_node=c("node64", "node33", "node34"),
+                           timeout_sec = 2) {
   .need_future()
-
   # After we're done getting the information, revert to the original plan
   oplan <- plan()
   on.exit(plan(oplan), add = TRUE)
+  # Generally not needed, but will iterate through check nodes!
+  i <- 1
+  while (i <= length(check_node) && ! test_node(check_node[[i]], login_node, timeout_sec)) {
+    i <- i + 1
+  }
+
+  if (i > 1) {
+    if (i > length(check_node))
+      stop(paste0("All 'check' nodes failed to be accessed (",
+                  paste0(check_node, collapse=", "), ")"))
+    message(paste0("Check nodes failed: ", paste0(check_node[1:(i-1)], collapse=", ")))
+    message(paste0("Using ", check_node[[i]]))
+  }
   # Change the plan
   plan(list(
-    tweak(remote, workers = login_node),
-    tweak(remote, workers = check_node)
+    tweak(remote, workers = remote_login),
+    tweak(remote, workers = "node33")
   ))
 
-  node_text %<-% {
-    .keepme %<-% system("pbsnodes", intern = TRUE)
-    .keepme %>%
-      paste0(collapse="\n")
-  }
+  node_text %2% { system("pbsnodes", intern = TRUE) %>% paste0(collapse="\n") }
+
+  if (node_text=="")
+    stop("Seems like the pbsnodes system is down (ie node64). Try it manually!")
 
   get_node_data(node_text)
 }
@@ -383,9 +414,9 @@ nodes_to_plan <- function(nodes, # the node df
   if (use_abbreviations) nodes <- stringr::str_extract(nodes, "node[0-9]+")
 
   head_s <- paste0("plan(list(
-  tweak(remote, workers = \"", login_node, "\"),
-  tweak(cluster, workers = c(\"", paste0(nodes, collapse="\", \""), "\")),
-  ")
+                   tweak(remote, workers = \"", login_node, "\"),
+                   tweak(cluster, workers = c(\"", paste0(nodes, collapse="\", \""), "\")),
+                   ")
   if (is.null(core_mapper)) {
     full_s <- paste0(head_s, "multiprocess\n))")
   } else {

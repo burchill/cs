@@ -4,12 +4,13 @@
 \alias{get_nodes_info}
 \title{Get the status of all the nodes}
 \usage{
-get_nodes_info(login_node, check_node = "node64")
+get_nodes_info(login_node, check_node = c("node64", "node33", "node34"),
+  timeout_sec = 2)
 }
 \arguments{
 \item{login_node}{a string for the gateway login, e.g., "zachburchill@cycle1.cs.rochester.edu"}
 
-\item{check_node}{the name of any "nodeN" hostname, to get the data from}
+\item{check_node}{the name of any "nodeN" hostnames, to get the data from. Will iterate through until it finds one that works.}
 }
 \value{
 A data frame with all the node information
