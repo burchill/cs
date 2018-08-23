@@ -5,7 +5,6 @@
   }
 }
 
-
 #' Assign futures from different levels of the topology
 #'
 #' Let's say you want to run a job on the bcs-cycle1 server, which
@@ -130,7 +129,7 @@ default_planner <- function(login_node, n,
 get_n_best_nodes <- function(login_node, n,
                              ...,
                              use_abbreviations = TRUE) {
-
+  stopifnot(!is.null(login_node))
   filterers <- rlang::enquos(...)
 
   node_df <- get_nodes_info(login_node)
@@ -162,6 +161,7 @@ get_n_best_nodes <- function(login_node, n,
 #' @rdname testing_nodes
 #' @export
 test_node <- function(nodename, login_node, timeout_sec) {
+  stopifnot(!is.null(login_node))
   # Sometimes you can get time-out errors
   tryCatch(
     {
@@ -184,13 +184,20 @@ test_node <- function(nodename, login_node, timeout_sec) {
 #' @rdname testing_nodes
 #' @export
 test_nodes <- function(node_list, login_node,
-                       timeout_sec = 2) {
+                       timeout_sec = 2,
+                       verbose = FALSE) {
+  stopifnot(!is.null(login_node))
   # After we're done getting the information, revert to the original plan
   oplan <- plan()
   on.exit(plan(oplan), add = TRUE)
 
-  good_nodes <- purrr::map_lgl(node_list,
-                               ~test_node(., login_node, timeout_sec))
+  # If you want it to print the node it's on (eg to see where the hold-ups are)
+  if (verbose==T)
+    .f <- function(.node) { print(.node); test_node(.node, login_node, timeout_sec) }
+  else
+    .f <- ~test_node(., login_node, timeout_sec)
+
+  good_nodes <- purrr::map_lgl(node_list, .f)
 
   message(paste0("Bad nodes: ", paste0(node_list[!good_nodes], collapse=", ")))
   node_list[good_nodes]

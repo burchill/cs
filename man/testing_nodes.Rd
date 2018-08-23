@@ -7,7 +7,7 @@
 \usage{
 test_node(nodename, login_node, timeout_sec)
 
-test_nodes(node_list, login_node, timeout_sec = 2)
+test_nodes(node_list, login_node, timeout_sec = 2, verbose = FALSE)
 }
 \arguments{
 \item{nodename}{a string of the node to try to connect to}
