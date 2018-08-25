@@ -1,3 +1,91 @@
+check_multisession_hierarchy <- function() {
+  oplan <- plan("list")
+  if (!("multisession" %in% attr(oplan[[1]], "class")))
+    stop("`multisession` needs to be the top plan")
+  if (length(oplan) < 2)
+    stop("The plan needs to be more than one level for embedding")
+}
+
+#' Beep when future is resolved
+#'
+#' This is pretty untested code, but the gist is that it will make a beeping sound when the future is resolved. In the meantime however, you can't change the `plan` and the current plan needs to have a `multisession` layer at the top of the hierachy, with the layer(s) you want to work on below it. This function also requires `beepr` to be installed. \cr
+#' The `futureBeep` function is basically a wrapper of `future()` (and lets you specify the beep sound), and \%beep\% is basically a wrapper of \%<-\%. \cr
+#' To-do: add docs
+#'
+#' @rdname beeper
+#' @export
+`%beep%` <- function (x, value) {
+  check_multisession_hierarchy()
+
+  target <- substitute(x)
+  inner_expr <- substitute(value)
+  expr <- substitute({
+    .zach %<-% inner_expr
+    .zach
+    beepr::beep()
+    .zach
+  })
+  envir <- parent.frame(1)
+  future:::futureAssignInternal(target, expr, envir = envir,
+                                substitute = FALSE)
+}
+
+#' @rdname beeper
+#' @export
+futureBeep <- function (expr, envir = parent.frame(), substitute = TRUE, globals = TRUE,
+                        packages = NULL, lazy = FALSE, seed = NULL, evaluator = plan("next"),
+                        ...,
+                        .beep_sound = 1) {
+  check_multisession_hierarchy()
+
+  if (substitute)
+    expr <- substitute(expr)
+  big_expr <- substitute({
+    .qua <- future::future(expr, envir, substitute, globals, packages, lazy, seed, evaluator, ...)
+    value(.qua)
+    beepr::beep(.beep_sound)
+    .qua
+  })
+  if (!is.function(evaluator)) {
+    stop("Argument 'evaluator' must be a function: ", typeof(evaluator))
+  }
+  future <- evaluator(big_expr, envir = envir, substitute = FALSE,
+                      lazy = lazy, seed = seed, globals = globals, packages = packages,
+                      ...)
+  if (!inherits(future, "Future")) {
+    stop("Argument 'evaluator' specifies a function that does not return a Future object: ",
+         paste(sQuote(class(future)), collapse = ", "))
+  }
+  future
+}
+
+#' Kill R processes on nodes
+#'
+#' This command requires a "secondary" login node, i.e., a different gateway node to access the cluster nodes.  Then it just uses `pidof R` and `kill` UNIX commands to kill R. Probably only works on UNIX machines. \cr
+#' To-do: add docs
+#'
+#' @export
+kill_r_on_nodes <- function(node_list, secondary_login_node) {
+  oplan <- plan()
+  on.exit(plan(oplan), add = TRUE)
+
+  plan(list(
+    tweak(remote, workers = secondary_login_node),
+    tweak(cluster, workers = unique(node_list))
+  ))
+
+  killer <- future({
+    xxx <- future_map(c(1:length(unique(node_list))),
+                      function(x) { names <- system("pidof R", intern=TRUE); system(paste0("kill ", names)); "done"})
+    xxx
+  })
+}
+
+
+
+
+
+
 
 #' Monitor resource use on a single node
 #'
