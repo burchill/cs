@@ -165,13 +165,19 @@ test_node <- function(nodename, login_node, timeout_sec) {
   # Sometimes you can get time-out errors
   tryCatch(
     {
-      plan(list(
-        tweak(remote, workers=login_node),
-        tweak(remote, workers=nodename)
-      ))
-      tester %2% { "a" }
-      Sys.sleep(timeout_sec)
-      if (resolved(futureOf(tester)) && tester=="a") return(TRUE)
+      plan(multisession)
+      outer_test %<-% {
+        plan(list(
+          tweak(remote, workers=login_node),
+          tweak(remote, workers=nodename)
+        ))
+        tester %2% { "a" }
+        tester
+      }
+      Sys.sleep(timeout_sec/2) # breaking it down by two, lol
+      if (resolved(futureOf(outer_test)) && outer_test=="a") return(TRUE)
+      Sys.sleep(timeout_sec/2) # breaking it down by two, lol
+      if (resolved(futureOf(outer_test)) && outer_test=="a") return(TRUE)
       else return(FALSE)
     },
     error = function(e) {
@@ -180,11 +186,32 @@ test_node <- function(nodename, login_node, timeout_sec) {
     }
   )
 }
+# # The older design
+# test_node <- function(nodename, login_node, timeout_sec) {
+#   stopifnot(!is.null(login_node))
+#   # Sometimes you can get time-out errors
+#   tryCatch(
+#     {
+#       plan(list(
+#         tweak(remote, workers=login_node),
+#         tweak(remote, workers=nodename)
+#       ))
+#       tester %2% { "a" }
+#       Sys.sleep(timeout_sec)
+#       if (resolved(futureOf(tester)) && tester=="a") return(TRUE)
+#       else return(FALSE)
+#     },
+#     error = function(e) {
+#       warning(paste0("Timeout error in node ", nodename))
+#       return(FALSE)
+#     }
+#   )
+# }
 
 #' @rdname testing_nodes
 #' @export
 test_nodes <- function(node_list, login_node,
-                       timeout_sec = 2,
+                       timeout_sec = 5,
                        verbose = FALSE) {
   stopifnot(!is.null(login_node))
   # After we're done getting the information, revert to the original plan
