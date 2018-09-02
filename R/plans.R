@@ -285,9 +285,9 @@ test_nodes <- function(node_list, login_node,
 
   # If verbose
   if (verbose==TRUE) {
-    good_nodes %>% message_collector(message, "Messages:", "messages")
-    good_nodes %>% message_collector(warning, "Warnings:", "warnings", call.=FALSE)
-    good_nodes %>% message_collector(warning, "Errors:", "errors", call.=FALSE)
+    good_nodes %>% message_collector(message, "Messages", "messages")
+    good_nodes %>% message_collector(warning, "Warnings", "warnings", call.=FALSE)
+    good_nodes %>% message_collector(warning, "Errors", "errors", call.=FALSE)
   }
 
   good_nodes <- map_lgl(
