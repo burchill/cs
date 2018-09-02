@@ -293,8 +293,8 @@ test_nodes <- function(node_list, login_node,
   good_nodes <- map_lgl(
     good_nodes,
     function(n) {
-      if (is.null(n$value)) FALSE
-      else n$value })
+      if (is.null(n$value) | is.na(n$value)) FALSE
+      else n$value == TRUE })
 
   message(paste0("Bad nodes: ", paste0(node_list[!good_nodes], collapse=", ")))
   node_list[good_nodes]
