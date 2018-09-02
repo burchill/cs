@@ -5,6 +5,39 @@
   }
 }
 
+# Waits until a logical expression is true or the time limit runs out
+# Doesn't work for implicit futures (ie `resolved(futureOf(x))`)
+wait_and_check <- function(logical_expr, total_sleep_time=10, checks = 100) {
+  expr <- rlang::enquo(logical_expr)
+  counter <- 0
+  while (!is.null(rlang::eval_tidy(expr)) && !rlang::eval_tidy(expr) == TRUE && counter < checks) {
+    Sys.sleep(total_sleep_time/checks)
+    counter <- counter + 1
+  }
+  return(rlang::eval_tidy(expr))
+}
+
+# Used for gathering up lists of errors from nodes, basically
+message_collector <- function(l, print_function, title,
+                              collect_all_name = NULL,
+                              ...) {
+  if (!is.null(collect_all_name)) {
+    l <- purrr::map(l, ~.[[collect_all_name]]) %>%
+      keep(~length(.) > 0)
+  }
+  if (length(l) > 0) {
+    print_function(
+      paste0(
+        title, ":",
+        reduce2(
+          names(l),
+          l, .init = "",
+          ~ paste0(..1, "\n", ..2, ": ", paste(..3, collapse=" | ")))),
+      ...)
+  }
+}
+
+
 #' Assign futures from different levels of the topology
 #'
 #' Let's say you want to run a job on the bcs-cycle1 server, which
@@ -150,41 +183,50 @@ get_n_best_nodes <- function(login_node, n,
 #'
 #' Test and see if a node is reachable by actually trying to connect to them.
 #'
-#' `test_node` is for individual nodes and will overwrite the previous plan. `test_nodes` takes a list of node names, tests each of them, and returns a list of the ones that work, and does not overwrite the previous plan.
+#' `test_node` is for individual nodes. `test_nodes` takes a list of node names, tests each of them, and returns a list of the ones that work.
 #'
 #'
 #' @param login_node a string for the gateway login, e.g., \"zachburchill@cycle1.cs.rochester.edu\"
-#' @param timeout_sec the number of seconds to wait before declaring the node dead
+#' @param timeout_sec the number of seconds to wait after trying to connect to a node before declaring it dead
+#' @param .connection_timer the number of additional seconds to wait before declaring that the \emph{attempt} to connect to the node was unsuccessful
 #' @param nodename a string of the node to try to connect to
 #' @param node_list a list/vector of strings of node names to try to connect to
+#' @param verbose a boolean on whether to print the errors, messages, and warnings that happend while testing the nodes, if any
 
 #' @rdname testing_nodes
 #' @export
-test_node <- function(nodename, login_node, timeout_sec) {
+test_node <- function(nodename, login_node,
+                      timeout_sec, .connection_timer = 3) {
   stopifnot(!is.null(login_node))
-  # Sometimes you can get time-out errors
-  tryCatch(
-    {
-      plan(multisession)
-      outer_test %<-% {
-        plan(list(
-          tweak(remote, workers=login_node),
-          tweak(remote, workers=nodename)
-        ))
-        tester %2% { "a" }
-        tester
-      }
-      Sys.sleep(timeout_sec/2) # breaking it down by two, lol
-      if (resolved(futureOf(outer_test)) && outer_test=="a") return(TRUE)
-      Sys.sleep(timeout_sec/2) # breaking it down by two, lol
-      if (resolved(futureOf(outer_test)) && outer_test=="a") return(TRUE)
-      else return(FALSE)
-    },
-    error = function(e) {
-      warning(paste0("Timeout error in node ", nodename))
-      return(FALSE)
-    }
-  )
+
+  # if you're already on the login node, this should be NA
+  if (is.na(login_node))
+    da_plan <- list(tweak(remote, workers = nodename))
+  # If you're not logged in already from a server:
+  else {
+    da_plan <- list(tweak(remote, workers = login_node), tweak(remote, workers = nodename))
+    oplan <- plan()
+    on.exit(plan(oplan), add = TRUE)
+  }
+
+  plan(multisession)
+  # This makes sure that there's never a delay *trying* to connect (ie in `plan(da_plan)`)
+  outer_test %<-% {
+    plan(da_plan)
+    if (is.na(login_node))
+      tester %<-% { "a" }
+    else
+      tester %2% { "a" }
+    tester_fut <- futureOf(tester)
+    # This waits until tester is resolved or total_sleep_time elapses
+    its_resolved <- wait_and_check(resolved(tester_fut), total_sleep_time = timeout_sec)
+    if (its_resolved) tester
+    else FALSE
+  }
+  fut <- futureOf(outer_test)
+  its_resolved <- wait_and_check(resolved(fut), total_sleep_time = .connection_timer + timeout_sec)
+  if (its_resolved && outer_test=="a") return(TRUE)
+  else return(FALSE)
 }
 # # The older design
 # test_node <- function(nodename, login_node, timeout_sec) {
@@ -212,19 +254,47 @@ test_node <- function(nodename, login_node, timeout_sec) {
 #' @export
 test_nodes <- function(node_list, login_node,
                        timeout_sec = 5,
-                       verbose = FALSE) {
+                       verbose = FALSE,
+                       .connection_timer = 3) {
+  # Make sure there's a login node
   stopifnot(!is.null(login_node))
+
   # After we're done getting the information, revert to the original plan
   oplan <- plan()
   on.exit(plan(oplan), add = TRUE)
 
-  # If you want it to print the node it's on (eg to see where the hold-ups are)
-  if (verbose==T)
-    .f <- function(.node) { print(.node); test_node(.node, login_node, timeout_sec) }
-  else
-    .f <- ~test_node(., login_node, timeout_sec)
+  # This checks to see that we can login
+  plan(remote, workers = login_node)
+  login_tester <- future({ "yo" })
+  isitresolved <- wait_and_check(resolved(login_tester), total_sleep_time = 5)
+  if ( !(isitresolved) || value(login_tester) != "yo")
+    stop("Can't even log in to login node, yo")
+  message("Successful login to gateway node")
 
-  good_nodes <- purrr::map_lgl(node_list, .f)
+  # Test the nodes
+  good_nodes <- future_map(
+    node_list,
+    function(n) {
+      zplyr::collect_all({
+        test_node(nodename = n,
+                  login_node = NA,
+                  timeout_sec = timeout_sec,
+                  .connection_timer = .connection_timer)
+      }, catchErrors = TRUE)
+    }) %>% set_names(node_list)
+
+  # If verbose
+  if (verbose==TRUE) {
+    good_nodes %>% message_collector(message, "Messages:", "messages")
+    good_nodes %>% message_collector(warning, "Warnings:", "warnings", call.=FALSE)
+    good_nodes %>% message_collector(warning, "Errors:", "errors", call.=FALSE)
+  }
+
+  good_nodes <- map_lgl(
+    good_nodes,
+    function(n) {
+      if (is.null(n$value)) FALSE
+      else n$value })
 
   message(paste0("Bad nodes: ", paste0(node_list[!good_nodes], collapse=", ")))
   node_list[good_nodes]
@@ -245,7 +315,7 @@ test_nodes <- function(node_list, login_node,
 #' @export
 get_nodes_info <- function(login_node,
                            check_node=c("node64", "node33", "node34"),
-                           timeout_sec = 2) {
+                           timeout_sec = 10) {
   .need_future()
   # After we're done getting the information, revert to the original plan
   oplan <- plan()

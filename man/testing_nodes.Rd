@@ -5,22 +5,27 @@
 \alias{test_nodes}
 \title{Test nodes' connectivity}
 \usage{
-test_node(nodename, login_node, timeout_sec)
+test_node(nodename, login_node, timeout_sec, .connection_timer = 3)
 
-test_nodes(node_list, login_node, timeout_sec = 5, verbose = FALSE)
+test_nodes(node_list, login_node, timeout_sec = 5, verbose = FALSE,
+  .connection_timer = 3)
 }
 \arguments{
 \item{nodename}{a string of the node to try to connect to}
 
 \item{login_node}{a string for the gateway login, e.g., "zachburchill@cycle1.cs.rochester.edu"}
 
-\item{timeout_sec}{the number of seconds to wait before declaring the node dead}
+\item{timeout_sec}{the number of seconds to wait after trying to connect to a node before declaring it dead}
+
+\item{.connection_timer}{the number of additional seconds to wait before declaring that the \emph{attempt} to connect to the node was unsuccessful}
 
 \item{node_list}{a list/vector of strings of node names to try to connect to}
+
+\item{verbose}{a boolean on whether to print the errors, messages, and warnings that happend while testing the nodes, if any}
 }
 \description{
 Test and see if a node is reachable by actually trying to connect to them.
 }
 \details{
-\code{test_node} is for individual nodes and will overwrite the previous plan. \code{test_nodes} takes a list of node names, tests each of them, and returns a list of the ones that work, and does not overwrite the previous plan.
+\code{test_node} is for individual nodes. \code{test_nodes} takes a list of node names, tests each of them, and returns a list of the ones that work.
 }

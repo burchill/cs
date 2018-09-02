@@ -5,7 +5,7 @@
 \title{Get the status of all the nodes}
 \usage{
 get_nodes_info(login_node, check_node = c("node64", "node33", "node34"),
-  timeout_sec = 2)
+  timeout_sec = 10)
 }
 \arguments{
 \item{login_node}{a string for the gateway login, e.g., "zachburchill@cycle1.cs.rochester.edu"}
