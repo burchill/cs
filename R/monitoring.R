@@ -17,13 +17,14 @@ check_multisession_hierarchy <- function() {
 #' @export
 `%beep%` <- function (x, value) {
   check_multisession_hierarchy()
+  .beepsound <- getOption("default.beepsound", 1)
 
   target <- substitute(x)
   inner_expr <- substitute(value)
   expr <- substitute({
     .zach %<-% inner_expr
     while (!resolved(futureOf(.zach))) Sys.sleep(2)
-    beepr::beep(getOption("default.beepsound",1))
+    beepr::beep(.beepsound)
     .zach
   })
   envir <- parent.frame(1)
