@@ -4,7 +4,7 @@
 \alias{collect_decorator}
 \title{Wrap a function with \code{collect_all}}
 \usage{
-collect_decorator(f)
+collect_decorator(f, indices = 1:4, asStrings = TRUE)
 }
 \arguments{
 \item{f}{a function}

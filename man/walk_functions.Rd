@@ -69,5 +69,5 @@ list they'll return will help you diagnose what went wrong, etc.
 Underlyingly, these functions call the \code{furrr} \code{future_map} functions, but take the \code{.f} argument and essentially edit it, squeezing in a \code{zplyr::collect_all} wrapper while removing the \code{$value} element (this was done because accidentally returning huge models would slow down the parallelization considerably).
 }
 \seealso{
-\code{\link{collected_info_to_df}}, \code{\link{.future_walk_maker}}
+\code{\link{collected_info_to_df}}, \code{\link{future_map_maker}}
 }

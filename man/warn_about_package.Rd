@@ -12,5 +12,5 @@ warn_about_package(package, install_location = ".")
 \item{install_location}{a string appended to the end of the warning}
 }
 \description{
-Eh, just look at the code
+Eh, just look at the code. I kinda stopped using this, like a lazy, lazy coder.
 }
