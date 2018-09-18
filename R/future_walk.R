@@ -97,7 +97,6 @@ warn_about_package <- function(package, install_location=".") {
 #' @param \dots additional arguments to pass into `decorator_func`
 #' @param decorator_func the function that you want to use to modify the given `.f` argument I use the term "decorator" like this is analogous to Python, but it's not 100\% accurate
 #' @seealso \code{\link{collect_decorator}}, \code{\link{warn_about_package}}
-#' @rdname future_walk_maker
 #' @export
 future_map_maker <- function(.orig_function,
                                ...,

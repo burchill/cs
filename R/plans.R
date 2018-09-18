@@ -281,7 +281,7 @@ test_nodes <- function(node_list, login_node,
                   timeout_sec = timeout_sec,
                   .connection_timer = .connection_timer)
       }, catchErrors = TRUE)
-    }) %>% set_names(node_list)
+    }) %>% purrr::set_names(node_list)
 
   # If verbose
   if (verbose==TRUE) {

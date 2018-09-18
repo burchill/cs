@@ -1,4 +1,9 @@
 #' @export
 done <- function(x) {
-  future::resolved(future::futureOf(x, envir = parent.frame(1)))
+  future::resolved(
+    eval(substitute(future::futureOf(x)),
+         envir = parent.frame(1))
+  )
 }
+
+
