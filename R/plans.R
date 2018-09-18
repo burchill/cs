@@ -374,7 +374,7 @@ get_node_data <- function(info_string, as_df=TRUE) {
             stringr::str_split(x,"=")}) %>%
             purrr::pluck(1)
           purrr::map(val_pairs, 2) %>%
-            set_names(purrr::map(val_pairs, 1))
+            purrr::set_names(purrr::map(val_pairs, 1))
         }
 
       if (!is.null(status) & length(status) > 1) { append(l, status) }
