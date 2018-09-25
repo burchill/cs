@@ -2,10 +2,13 @@
 % Please edit documentation in R/monitoring.R
 \name{\%beep\%}
 \alias{\%beep\%}
+\alias{\%sayname\%}
 \alias{futureBeep}
-\title{Beep when future is resolved}
+\title{Make sound when future is resolved}
 \usage{
 x \%beep\% value
+
+x \%sayname\% value
 
 futureBeep(expr, envir = parent.frame(), substitute = TRUE,
   globals = TRUE, packages = NULL, lazy = FALSE, seed = NULL,
@@ -13,8 +16,8 @@ futureBeep(expr, envir = parent.frame(), substitute = TRUE,
   .beep_sound = getOption("default.beepsound", 1), .sleep_interval = 3)
 }
 \description{
-This is pretty untested code, but the gist is that it will make a beeping sound when the future is resolved. In the meantime however, you can't change the \code{plan} and the current plan needs to have a \code{multisession} layer at the top of the hierachy, with the layer(s) you want to work on below it. This function also requires \code{beepr} to be installed. \cr
-The \code{futureBeep} function is basically a wrapper of \code{future()} (and lets you specify the beep sound), and \%beep\% is basically a wrapper of \%<-\%. \cr
+This is pretty untested code, but the gist is that these functions will make sounds when the future is resolved. \code{futureBeep} and \code{\%beep\%} will play a beeping sound (which is platform independent but requires the \code{beepr} package), while \code{\%sayname\%} will say the name of the variable out loud via a speech synthesizer (only works for OSX). In the meantime however, you can't change the \code{plan} and the current plan needs to have a \code{multisession} layer at the top of the hierachy, with the layer(s) you want to work on below it. This function also requires \code{beepr} to be installed. \cr
+The \code{futureBeep} function is basically a wrapper of \code{future()} (and lets you specify the beep sound), and \code{\%beep\%} is basically a wrapper of \code{\%<-\%}. \cr
 You can change the default beep sound with options("default.beepsound"). \cr
 To-do: add docs
 }

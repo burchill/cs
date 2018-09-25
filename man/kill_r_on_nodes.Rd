@@ -4,8 +4,8 @@
 \alias{kill_r_on_nodes}
 \title{Kill R processes on nodes}
 \usage{
-kill_r_on_nodes(node_list, secondary_login_node, wait_until_resolved = FALSE,
-  beep_on_end = FALSE)
+kill_r_on_nodes(node_list, secondary_login_node,
+  wait_until_resolved = FALSE, beep_on_end = FALSE)
 }
 \description{
 This command requires a "secondary" login node, i.e., a different gateway node to access the cluster nodes.  Then it just uses \code{pidof R} and \code{kill} UNIX commands to kill R. Probably only works on UNIX machines. \cr

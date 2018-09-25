@@ -9,14 +9,17 @@
 \alias{signal_fm_conditions}
 \title{Evaluate conditions signalled in \code{future_map} calls}
 \usage{
-future_cnd_map(.x, .f, ..., .progress = FALSE, .options = future_options())
+future_cnd_map(.x, .f, ..., .progress = FALSE,
+  .options = future_options())
 
-future_cnd_imap(.x, .f, ..., .progress = FALSE, .options = future_options())
+future_cnd_imap(.x, .f, ..., .progress = FALSE,
+  .options = future_options())
 
 future_cnd_map2(.x, .y, .f, ..., .progress = FALSE,
   .options = future_options())
 
-future_cnd_pmap(.l, .f, ..., .progress = FALSE, .options = future_options())
+future_cnd_pmap(.l, .f, ..., .progress = FALSE,
+  .options = future_options())
 
 evaluate_fm_results(future_cnd_map_results, signalErrors = TRUE)
 

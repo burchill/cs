@@ -7,7 +7,7 @@ Maintainer: Zachary Burchill <nah@toobusy.com>
 Description: A number of functions to make connecting to the servers a little less of a hassle.
 License: GPL-3
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
 Roxygen: list(markdown = TRUE, roclets = c("rd", "namespace", "collate"))
 Depends:
     dplyr    (>= 0.7.0),

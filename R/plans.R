@@ -1,13 +1,6 @@
-.need_future <- function() {
-  if (!requireNamespace("future", quietly = TRUE)) {
-    stop("Package \"future\" needed for this function to work / work with these parameters. Please install it.",
-         call. = FALSE)
-  }
-}
-
 # Waits until a logical expression is true or the time limit runs out
 # Doesn't work for implicit futures (ie `resolved(futureOf(x))`)
-wait_and_check <- function(logical_expr, total_sleep_time=10, checks = 100) {
+wait_and_check <- function(logical_expr, total_sleep_time = 10, checks = 100) {
   expr <- rlang::enquo(logical_expr)
   counter <- 0
   while (!is.null(rlang::eval_tidy(expr)) && !rlang::eval_tidy(expr) == TRUE && counter < checks) {
@@ -79,7 +72,6 @@ message_collector <- function(l, print_function, title,
 bcs_planner <- function(login_node,
                         core_function = future::availableCores,
                         backoff_threshold = 0.7) {
-  .need_future()
   core_function_expr <- quo_name(enquo(core_function))
 
   # Make it callable if it's, say, a number
@@ -146,8 +138,6 @@ bcs_planner <- function(login_node,
 #' @export
 default_planner <- function(login_node, n,
                             ...) {
-  .need_future()
-
   get_n_best_nodes(login_node, n, ...) %>%
     # Turn the nodes into the plan
     nodes_to_plan(login_node, use_abbreviations = TRUE)
@@ -316,7 +306,6 @@ test_nodes <- function(node_list, login_node,
 get_nodes_info <- function(login_node,
                            check_node=c("node64", "node33", "node34"),
                            timeout_sec = 10) {
-  .need_future()
   # After we're done getting the information, revert to the original plan
   oplan <- plan()
   on.exit(plan(oplan), add = TRUE)
@@ -530,7 +519,6 @@ nodes_to_plan <- function(nodes, # the node df
   message(paste0("Plan being executed (minus user-defined functions):\n", full_s))
 
   if (goahead==TRUE) {
-    .need_future()
     plan(list(
       tweak(remote, workers = login_node),
       tweak(cluster, workers = nodes),

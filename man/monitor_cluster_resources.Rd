@@ -4,9 +4,48 @@
 \alias{monitor_cluster_resources}
 \title{Monitor resources use on cluster}
 \usage{
-monitor_cluster_resources(username_or_command, login_node, node_list, save_path,
-  sleeping_time, total_checks, ...)
+monitor_cluster_resources(username_or_command, login_node, node_list,
+  save_path, sleeping_time, total_checks, ...)
+}
+\arguments{
+\item{username_or_command}{The username you're using to log in to the remote server or, if you supply \code{command_maker=NULL} to the \dots, the command you want to call and check the results of. Just stick with your username. It's easier for everyone.}
+
+\item{login_node}{the name of the gateway node (e.g. 'zach@remote_back_up_server.server.com'). Should NOT be the same as the node you're using to run the other tasks.}
+
+\item{node_list}{a list of the nodes you want to monitor}
+
+\item{save_path}{the filename you want to save all this information to (on the remote server)}
+
+\item{sleeping_time}{time between checks in seconds}
+
+\item{total_checks}{total number of checks}
+
+\item{\dots}{additional arguments supplied to \code{monitor_resources_on_node}}
 }
 \description{
-To-do: add docs
+To-do: add docs \cr \cr
+The data comes from the linux command \code{ps} (specifically, "ps -u <username> -o pcpu,rss,size,state,time,cmd" ). If you want to know EXACTLY what each column means RTFM and type in \code{man ps} in a UNIX terminal.
+}
+\examples{
+\dontrun{
+monitor_cluster_resources("zach",
+                          "zach@remote_backup_server.com",
+                          nodes_to_monitor,
+                          save_path="/u/zach/bb_maker_resources.RDS",
+                          sleeping_time = 10,
+                          total_checks = 6)
+# Wait for it to complete before using another connection to 'remote_backup_server.com'
+plan(remote, workers = "zach@remote_backup_server.com")
+df \%<-\% readRDS("/u/zach/bb_maker_resources.RDS")
+resolved(futureOf(df))
+
+df \%>\%
+  group_by(Nodename, SampleTime) \%>\%
+  filter(CMD =="R") \%>\%
+  summarise(RSS = sum(as.numeric(RSS)),
+            CPU = sum(as.numeric(`\%CPU`))) \%>\%
+  filter(RSS > 2e+06) \%>\%
+  ggplot(aes(x=SampleTime, y=RSS, color=Nodename)) +
+  geom_line()
+}
 }

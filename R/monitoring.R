@@ -6,16 +6,17 @@ check_multisession_hierarchy <- function() {
     stop("The plan needs to be more than one level for embedding")
 }
 
-#' Beep when future is resolved
+#' Make sound when future is resolved
 #'
-#' This is pretty untested code, but the gist is that it will make a beeping sound when the future is resolved. In the meantime however, you can't change the `plan` and the current plan needs to have a `multisession` layer at the top of the hierachy, with the layer(s) you want to work on below it. This function also requires `beepr` to be installed. \cr
-#' The `futureBeep` function is basically a wrapper of `future()` (and lets you specify the beep sound), and \%beep\% is basically a wrapper of \%<-\%. \cr
+#' This is pretty untested code, but the gist is that these functions will make sounds when the future is resolved. `futureBeep` and `%beep%` will play a beeping sound (which is platform independent but requires the `beepr` package), while `%sayname%` will say the name of the variable out loud via a speech synthesizer (only works for OSX). In the meantime however, you can't change the `plan` and the current plan needs to have a `multisession` layer at the top of the hierachy, with the layer(s) you want to work on below it. This function also requires `beepr` to be installed. \cr
+#' The `futureBeep` function is basically a wrapper of `future()` (and lets you specify the beep sound), and `%beep%` is basically a wrapper of `%<-%`. \cr
 #' You can change the default beep sound with options("default.beepsound"). \cr
 #' To-do: add docs
 #'
 #' @rdname beeper
 #' @export
 `%beep%` <- function (x, value) {
+  warn_about_package("beepr")
   check_multisession_hierarchy()
   .beepsound <- getOption("default.beepsound", 1)
 
@@ -34,11 +35,41 @@ check_multisession_hierarchy <- function() {
 
 #' @rdname beeper
 #' @export
+`%sayname%` <- function (x, value) {
+  check_multisession_hierarchy()
+
+  target <- substitute(x)
+  command <- paste0("say '", target," is done'")
+
+  # Require OSX
+  if (!(grepl("darwin",tolower(Sys.info()['sysname'])) ||
+        grepl("darwin", R.version$os))) {
+    warning("`%sayname%` requires OSX to synthesize speech. Defaulting to `beep` sound.")
+    warn_about_package("beepr")
+    .make_noise <- function() beepr::beep(getOption("default.beepsound", 1))
+  } else
+    .make_noise <- function() system(command)
+
+  inner_expr <- substitute(value)
+  expr <- substitute({
+    .zach %<-% inner_expr
+    while (!resolved(futureOf(.zach))) Sys.sleep(2)
+    .make_noise()
+    .zach
+  })
+  envir <- parent.frame(1)
+  future:::futureAssignInternal(target, expr, envir = envir,
+                                substitute = FALSE)
+}
+
+#' @rdname beeper
+#' @export
 futureBeep <- function (expr, envir = parent.frame(), substitute = TRUE, globals = TRUE,
                         packages = NULL, lazy = FALSE, seed = NULL, evaluator = plan("next"),
                         ...,
                         .beep_sound = getOption("default.beepsound", 1),
                         .sleep_interval = 3) {
+  warn_about_package("beepr")
   check_multisession_hierarchy()
 
   if (substitute)
@@ -93,16 +124,14 @@ kill_r_on_nodes <- function(node_list, secondary_login_node,
   } else return(killer)
 }
 
-
-
-
-
-
-
 #' Monitor resource use on a single node
 #'
 #' To-do: add docs
 #'
+#' @param username_or_command The username you're using to log in to the remote server or, if `command_maker` is `NULL`, the command you want to call and check the results of
+#' @param sleeping_time time between checks in seconds
+#' @param total_checks total number of checks
+#' @param command_maker a function that takes in `username_or_command` or `NULL`
 #' @export
 monitor_resources_on_node <- function(username_or_command,
                                       sleeping_time = 30,
@@ -110,9 +139,9 @@ monitor_resources_on_node <- function(username_or_command,
                                       command_maker = function(x) paste0("ps -u ",x," -o pcpu,rss,size,state,time,cmd")) {
 
   if (is.null(command_maker))
-    command = username_or_command
+    command <- username_or_command
   else
-    command = command_maker(username_or_command)
+    command <- command_maker(username_or_command)
 
   start_up_time <- Sys.time()
   node_name <- Sys.info()[["nodename"]]
@@ -159,12 +188,43 @@ resources_to_df <- function(resource_string_list,
 
 #' Monitor resources use on cluster
 #'
-#' To-do: add docs
+#' To-do: add docs \cr \cr
+#' The data comes from the linux command `ps` (specifically, "ps -u <username> -o pcpu,rss,size,state,time,cmd" ). If you want to know EXACTLY what each column means RTFM and type in `man ps` in a UNIX terminal.
 #'
+#' @param username_or_command The username you're using to log in to the remote server or, if you supply `command_maker=NULL` to the \dots, the command you want to call and check the results of. Just stick with your username. It's easier for everyone.
+#' @param login_node the name of the gateway node (e.g. 'zach@remote_back_up_server.server.com'). Should NOT be the same as the node you're using to run the other tasks.
+#' @param node_list a list of the nodes you want to monitor
+#' @param save_path the filename you want to save all this information to (on the remote server)
+#' @param sleeping_time time between checks in seconds
+#' @param total_checks total number of checks
+#' @param \dots additional arguments supplied to `monitor_resources_on_node`
+#' @examples
+#' \dontrun{
+#' monitor_cluster_resources("zach",
+#'                           "zach@remote_backup_server.com",
+#'                           nodes_to_monitor,
+#'                           save_path="/u/zach/bb_maker_resources.RDS",
+#'                           sleeping_time = 10,
+#'                           total_checks = 6)
+#' # Wait for it to complete before using another connection to 'remote_backup_server.com'
+#' plan(remote, workers = "zach@remote_backup_server.com")
+#' df %<-% readRDS("/u/zach/bb_maker_resources.RDS")
+#' resolved(futureOf(df))
+#'
+#' df %>%
+#'   group_by(Nodename, SampleTime) %>%
+#'   filter(CMD =="R") %>%
+#'   summarise(RSS = sum(as.numeric(RSS)),
+#'             CPU = sum(as.numeric(`%CPU`))) %>%
+#'   filter(RSS > 2e+06) %>%
+#'   ggplot(aes(x=SampleTime, y=RSS, color=Nodename)) +
+#'   geom_line()
+#' }
 #' @export
 monitor_cluster_resources <- function(username_or_command,
                                       login_node, node_list, save_path,
                                       sleeping_time, total_checks, ...) {
+  stopifnot(rlang::is_installed("furrr"))
   # in case you want to just save something,
   #   this will automaticall revert to the previous plan when done
   oplan <- plan()
@@ -181,7 +241,7 @@ monitor_cluster_resources <- function(username_or_command,
       function (nodename) {
         resources <- monitor_resources_on_node(username_or_command,
                                                sleeping_time = sleeping_time,
-                                               total_checks = total_checks)
+                                               total_checks = total_checks, ...)
         resources_to_df(resources$data,
                         resources$time,
                         resources$sleeping_time) %>%
