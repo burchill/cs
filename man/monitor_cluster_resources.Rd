@@ -26,6 +26,21 @@ monitor_cluster_resources(username_or_command, login_node, node_list,
 To-do: add docs \cr \cr
 The data comes from the linux command \code{ps} (specifically, "ps -u <username> -o pcpu,rss,size,state,time,cmd" ). If you want to know EXACTLY what each column means RTFM and type in \code{man ps} in a UNIX terminal.
 }
+\details{
+Each row is a process at a given time on a given node. \cr \cr
+\strong{Columns:} \cr
+\itemize{
+\item \code{\%CPU} is the percent CPU being used by the process (can go > 100% for multicore nodes)
+\item \code{RSS}  is the memory usage (google it), probably in kb
+\item \code{SIZE} is somehow also related to memory usage (ugh computer stuff, amirite guys)
+\item \code{S}    is the state of the process. Basically "S" means sleeping and "R" means running
+\item \code{TIME} is the CPU time of the process. Basically how long it's been "active." (Processes, unlike grad students, sleep a lot)
+\item \code{PID}  is the ID of the process.
+\item \code{CMD}  is an extended form of the command/name of the process. All R processes have been renamed "R"
+\item \code{SampleTime} is when the process was pinged
+\item \code{Nodename} is the name of the node
+}
+}
 \examples{
 \dontrun{
 monitor_cluster_resources("zach",

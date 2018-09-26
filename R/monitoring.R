@@ -8,10 +8,11 @@ check_multisession_hierarchy <- function() {
 
 #' Make sound when future is resolved
 #'
-#' This is pretty untested code, but the gist is that these functions will make sounds when the future is resolved. `futureBeep` and `%beep%` will play a beeping sound (which is platform independent but requires the `beepr` package), while `%sayname%` will say the name of the variable out loud via a speech synthesizer (only works for OSX). In the meantime however, you can't change the `plan` and the current plan needs to have a `multisession` layer at the top of the hierachy, with the layer(s) you want to work on below it. This function also requires `beepr` to be installed. \cr
-#' The `futureBeep` function is basically a wrapper of `future()` (and lets you specify the beep sound), and `%beep%` is basically a wrapper of `%<-%`. \cr
-#' You can change the default beep sound with options("default.beepsound"). \cr
-#' To-do: add docs
+#' This is pretty untested code, but the gist is that these functions will make sounds when the future is resolved. `futureBeep` and `%beep%` will play a beeping sound (which is platform independent but requires the `beepr` package), while `%sayname%` will say the name of the variable out loud via a speech synthesizer (only works for OSX). \cr \cr
+#' While the future is being run, however, you can't change the `plan` and the current plan needs to have a `multisession` layer at the top of the hierachy, with the layer(s) you want to work on below it. This function also requires `beepr` to be installed. \cr \cr
+#' The `futureBeep` function is basically a wrapper of `future()` (and lets you specify the beep sound), while `%beep%` and `%sayname%` are basically wrappers of `%<-%`. \cr
+#' You can change the default beep sound with options("default.beepsound"). \cr \cr
+#' To-do: add better docs
 #'
 #' @rdname beeper
 #' @export
@@ -136,7 +137,7 @@ kill_r_on_nodes <- function(node_list, secondary_login_node,
 monitor_resources_on_node <- function(username_or_command,
                                       sleeping_time = 30,
                                       total_checks = 10,
-                                      command_maker = function(x) paste0("ps -u ",x," -o pcpu,rss,size,state,time,cmd")) {
+                                      command_maker = function(x) paste0("ps -u ",x," -o pcpu,rss,size,state,time,cmd,pid")) {
 
   if (is.null(command_maker))
     command <- username_or_command
@@ -164,7 +165,7 @@ monitor_resources_on_node <- function(username_or_command,
 resources_to_df <- function(resource_string_list,
                             original_time,
                             time_increment,
-                            header="%CPU   RSS  SIZE S     TIME CMD\n",
+                            header="%CPU   RSS  SIZE S     TIME   PID CMD\n",
                             numcols = 6) {
   ti <- lubridate::duration(seconds=time_increment)
 
@@ -190,6 +191,20 @@ resources_to_df <- function(resource_string_list,
 #'
 #' To-do: add docs \cr \cr
 #' The data comes from the linux command `ps` (specifically, "ps -u <username> -o pcpu,rss,size,state,time,cmd" ). If you want to know EXACTLY what each column means RTFM and type in `man ps` in a UNIX terminal.
+#'
+#'Each row is a process at a given time on a given node. \cr \cr
+#' **Columns:** \cr
+#' \itemize{
+#'   \item `%CPU` is the percent CPU being used by the process (can go > 100% for multicore nodes)
+#'   \item `RSS`  is the memory usage (google it), probably in kb
+#'   \item `SIZE` is somehow also related to memory usage (ugh computer stuff, amirite guys)
+#'   \item `S`    is the state of the process. Basically "S" means sleeping and "R" means running
+#'   \item `TIME` is the CPU time of the process. Basically how long it's been "active." (Processes, unlike grad students, sleep a lot)
+#'   \item `PID`  is the ID of the process.
+#'   \item `CMD`  is an extended form of the command/name of the process. All R processes have been renamed "R"
+#'   \item `SampleTime` is when the process was pinged
+#'   \item `Nodename` is the name of the node
+#'   }
 #'
 #' @param username_or_command The username you're using to log in to the remote server or, if you supply `command_maker=NULL` to the \dots, the command you want to call and check the results of. Just stick with your username. It's easier for everyone.
 #' @param login_node the name of the gateway node (e.g. 'zach@remote_back_up_server.server.com'). Should NOT be the same as the node you're using to run the other tasks.

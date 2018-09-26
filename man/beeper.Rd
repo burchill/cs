@@ -16,8 +16,9 @@ futureBeep(expr, envir = parent.frame(), substitute = TRUE,
   .beep_sound = getOption("default.beepsound", 1), .sleep_interval = 3)
 }
 \description{
-This is pretty untested code, but the gist is that these functions will make sounds when the future is resolved. \code{futureBeep} and \code{\%beep\%} will play a beeping sound (which is platform independent but requires the \code{beepr} package), while \code{\%sayname\%} will say the name of the variable out loud via a speech synthesizer (only works for OSX). In the meantime however, you can't change the \code{plan} and the current plan needs to have a \code{multisession} layer at the top of the hierachy, with the layer(s) you want to work on below it. This function also requires \code{beepr} to be installed. \cr
-The \code{futureBeep} function is basically a wrapper of \code{future()} (and lets you specify the beep sound), and \code{\%beep\%} is basically a wrapper of \code{\%<-\%}. \cr
-You can change the default beep sound with options("default.beepsound"). \cr
-To-do: add docs
+This is pretty untested code, but the gist is that these functions will make sounds when the future is resolved. \code{futureBeep} and \code{\%beep\%} will play a beeping sound (which is platform independent but requires the \code{beepr} package), while \code{\%sayname\%} will say the name of the variable out loud via a speech synthesizer (only works for OSX). \cr \cr
+While the future is being run, however, you can't change the \code{plan} and the current plan needs to have a \code{multisession} layer at the top of the hierachy, with the layer(s) you want to work on below it. This function also requires \code{beepr} to be installed. \cr \cr
+The \code{futureBeep} function is basically a wrapper of \code{future()} (and lets you specify the beep sound), while \code{\%beep\%} and \code{\%sayname\%} are basically wrappers of \code{\%<-\%}. \cr
+You can change the default beep sound with options("default.beepsound"). \cr \cr
+To-do: add better docs
 }
