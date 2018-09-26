@@ -166,7 +166,7 @@ resources_to_df <- function(resource_string_list,
                             original_time,
                             time_increment,
                             header="%CPU   RSS  SIZE S     TIME   PID CMD\n",
-                            numcols = 6) {
+                            numcols = 7) {
   ti <- lubridate::duration(seconds=time_increment)
 
   purrr::imap_dfr(
@@ -253,14 +253,14 @@ monitor_cluster_resources <- function(username_or_command,
   zexpr <- quote({
     furrr::future_map_dfr(
       unique(node_list),
-      function (nodename) {
+      function (i) {
         resources <- monitor_resources_on_node(username_or_command,
                                                sleeping_time = sleeping_time,
                                                total_checks = total_checks, ...)
         resources_to_df(resources$data,
                         resources$time,
                         resources$sleeping_time) %>%
-          mutate(Nodename = nodename)
+          mutate(Nodename = resources$nodename)
       })
   })
 

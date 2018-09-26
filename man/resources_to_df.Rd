@@ -5,7 +5,7 @@
 \title{Convert monitor data into a dataframe}
 \usage{
 resources_to_df(resource_string_list, original_time, time_increment,
-  header = "\%CPU   RSS  SIZE S     TIME   PID CMD\\n", numcols = 6)
+  header = "\%CPU   RSS  SIZE S     TIME   PID CMD\\n", numcols = 7)
 }
 \description{
 To-do: add docs
