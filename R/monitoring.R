@@ -137,7 +137,7 @@ kill_r_on_nodes <- function(node_list, secondary_login_node,
 monitor_resources_on_node <- function(username_or_command,
                                       sleeping_time = 30,
                                       total_checks = 10,
-                                      command_maker = function(x) paste0("ps -u ",x," -o pcpu,rss,size,state,time,cmd,pid")) {
+                                      command_maker = function(x) paste0("ps -u ",x," -o pcpu,rss,size,state,time,pid,cmd")) {
 
   if (is.null(command_maker))
     command <- username_or_command
