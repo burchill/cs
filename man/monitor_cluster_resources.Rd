@@ -5,7 +5,7 @@
 \title{Monitor resources use on cluster}
 \usage{
 monitor_cluster_resources(username_or_command, login_node, node_list,
-  save_path, sleeping_time, total_checks, ...)
+  save_path, sleeping_time, total_checks, ..., stop_file = NULL)
 }
 \arguments{
 \item{username_or_command}{The username you're using to log in to the remote server or, if you supply \code{command_maker=NULL} to the \dots, the command you want to call and check the results of. Just stick with your username. It's easier for everyone.}
@@ -21,6 +21,8 @@ monitor_cluster_resources(username_or_command, login_node, node_list,
 \item{total_checks}{total number of checks}
 
 \item{\dots}{additional arguments supplied to \code{monitor_resources_on_node}}
+
+\item{stop_file}{The path of a file where, if present on the node, will cause it to end and return prematurely. A totally hacky way of communicating with the monitoring functions. Wholesome people should not bother with this parameter.}
 }
 \description{
 To-do: add docs \cr \cr

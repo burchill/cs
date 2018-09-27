@@ -6,7 +6,7 @@
 \usage{
 monitor_resources_on_node(username_or_command, sleeping_time = 30,
   total_checks = 10, command_maker = function(x) paste0("ps -u ", x,
-  " -o pcpu,rss,size,state,time,pid,cmd"))
+  " -o pcpu,rss,size,state,time,pid,cmd"), stop_file = NULL)
 }
 \arguments{
 \item{username_or_command}{The username you're using to log in to the remote server or, if \code{command_maker} is \code{NULL}, the command you want to call and check the results of}

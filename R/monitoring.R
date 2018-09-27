@@ -137,7 +137,11 @@ kill_r_on_nodes <- function(node_list, secondary_login_node,
 monitor_resources_on_node <- function(username_or_command,
                                       sleeping_time = 30,
                                       total_checks = 10,
-                                      command_maker = function(x) paste0("ps -u ",x," -o pcpu,rss,size,state,time,pid,cmd")) {
+                                      command_maker = function(x) paste0("ps -u ",x," -o pcpu,rss,size,state,time,pid,cmd"),
+                                      stop_file=NULL) {
+
+  if (!is.null(stop_file) && file.exists(stop_file))
+    stop("'Stop file' already exists")
 
   if (is.null(command_maker))
     command <- username_or_command
@@ -148,7 +152,7 @@ monitor_resources_on_node <- function(username_or_command,
   node_name <- Sys.info()[["nodename"]]
   counter = 0
   big_list = list()
-  while (counter < total_checks) {
+  while (counter < total_checks && !file.exists(stop_file)) {
     outstring <- paste0(system(command,  intern=TRUE), collapse="\n")
     big_list <- append(big_list, outstring)
     counter = counter + 1
@@ -213,6 +217,7 @@ resources_to_df <- function(resource_string_list,
 #' @param sleeping_time time between checks in seconds
 #' @param total_checks total number of checks
 #' @param \dots additional arguments supplied to `monitor_resources_on_node`
+#' @param stop_file The path of a file where, if present on the node, will cause it to end and return prematurely. A totally hacky way of communicating with the monitoring functions. Wholesome people should not bother with this parameter.
 #' @examples
 #' \dontrun{
 #' monitor_cluster_resources("zach",
@@ -238,7 +243,8 @@ resources_to_df <- function(resource_string_list,
 #' @export
 monitor_cluster_resources <- function(username_or_command,
                                       login_node, node_list, save_path,
-                                      sleeping_time, total_checks, ...) {
+                                      sleeping_time, total_checks, ...,
+                                      stop_file = NULL) {
   stopifnot(rlang::is_installed("furrr"))
   # in case you want to just save something,
   #   this will automaticall revert to the previous plan when done
@@ -256,7 +262,8 @@ monitor_cluster_resources <- function(username_or_command,
       function (i) {
         resources <- monitor_resources_on_node(username_or_command,
                                                sleeping_time = sleeping_time,
-                                               total_checks = total_checks, ...)
+                                               total_checks = total_checks, ...,
+                                               stop_file = stop_file)
         resources_to_df(resources$data,
                         resources$time,
                         resources$sleeping_time) %>%
