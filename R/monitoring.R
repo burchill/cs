@@ -133,6 +133,7 @@ kill_r_on_nodes <- function(node_list, secondary_login_node,
 #' @param sleeping_time time between checks in seconds
 #' @param total_checks total number of checks
 #' @param command_maker a function that takes in `username_or_command` or `NULL`
+#' @param stop_file The path of a file where, if present on the node, will cause it to end and return prematurely. A totally hacky way of communicating with the monitoring functions. Wholesome people should not bother with this parameter.
 #' @export
 monitor_resources_on_node <- function(username_or_command,
                                       sleeping_time = 30,
@@ -152,7 +153,9 @@ monitor_resources_on_node <- function(username_or_command,
   node_name <- Sys.info()[["nodename"]]
   counter = 0
   big_list = list()
-  while (counter < total_checks && !file.exists(stop_file)) {
+  while (counter < total_checks) {
+    if (!is.null(stop_file) && file.exists(stop_file))
+      break()
     outstring <- paste0(system(command,  intern=TRUE), collapse="\n")
     big_list <- append(big_list, outstring)
     counter = counter + 1

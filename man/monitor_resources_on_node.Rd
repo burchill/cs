@@ -16,6 +16,8 @@ monitor_resources_on_node(username_or_command, sleeping_time = 30,
 \item{total_checks}{total number of checks}
 
 \item{command_maker}{a function that takes in \code{username_or_command} or \code{NULL}}
+
+\item{stop_file}{The path of a file where, if present on the node, will cause it to end and return prematurely. A totally hacky way of communicating with the monitoring functions. Wholesome people should not bother with this parameter.}
 }
 \description{
 To-do: add docs
