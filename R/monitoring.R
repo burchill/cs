@@ -211,6 +211,7 @@ resources_to_df <- function(resource_string_list,
 #'   \item `CMD`  is an extended form of the command/name of the process. All R processes have been renamed "R"
 #'   \item `SampleTime` is when the process was pinged
 #'   \item `Nodename` is the name of the node
+#'   \item `PIDofMonitor` is the process ID of the monitoring process itself. You can use this to filter out the resources being used by this process.
 #'   }
 #'
 #' @param username_or_command The username you're using to log in to the remote server or, if you supply `command_maker=NULL` to the \dots, the command you want to call and check the results of. Just stick with your username. It's easier for everyone.
@@ -270,7 +271,8 @@ monitor_cluster_resources <- function(username_or_command,
         resources_to_df(resources$data,
                         resources$time,
                         resources$sleeping_time) %>%
-          mutate(Nodename = resources$nodename)
+          mutate(Nodename = resources$nodename,
+                 PIDofMonitor = Sys.getpid())
       })
   })
 

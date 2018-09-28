@@ -41,6 +41,7 @@ Each row is a process at a given time on a given node. \cr \cr
 \item \code{CMD}  is an extended form of the command/name of the process. All R processes have been renamed "R"
 \item \code{SampleTime} is when the process was pinged
 \item \code{Nodename} is the name of the node
+\item \code{PIDofMonitor} is the process ID of the monitoring process itself. You can use this to filter out the resources being used by this process.
 }
 }
 \examples{
