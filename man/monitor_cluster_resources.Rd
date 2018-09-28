@@ -14,7 +14,7 @@ monitor_cluster_resources(username_or_command, login_node, node_list,
 
 \item{node_list}{a list of the nodes you want to monitor}
 
-\item{save_path}{the filename you want to save all this information to (on the remote server)}
+\item{save_path}{the filename you want to save all this information to (on the remote server). If NULL, it returns the future of the data frame it would normally save. \strong{Choosing this option will overwrite the current \code{future} \code{plan}.}}
 
 \item{sleeping_time}{time between checks in seconds}
 
@@ -25,8 +25,8 @@ monitor_cluster_resources(username_or_command, login_node, node_list,
 \item{stop_file}{The path of a file where, if present on the node, will cause it to end and return prematurely. A totally hacky way of communicating with the monitoring functions. Wholesome people should not bother with this parameter.}
 }
 \description{
-To-do: add docs \cr \cr
-The data comes from the linux command \code{ps} (specifically, "ps -u <username> -o pcpu,rss,size,state,time,cmd" ). If you want to know EXACTLY what each column means RTFM and type in \code{man ps} in a UNIX terminal.
+To-do: add better docs \cr \cr
+The data comes from the linux command \code{ps} (specifically, "ps -u <username> -o pcpu,rss,size,state,time,cmd" ). If you want to know EXACTLY what each column means RTFM and type in \code{man ps} in a UNIX terminal. See \code{Details} for more information about the data frame being saved.
 }
 \details{
 Each row is a process at a given time on a given node. \cr \cr

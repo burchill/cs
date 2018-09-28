@@ -115,7 +115,7 @@ kill_r_on_nodes <- function(node_list, secondary_login_node,
             tweak(cluster, workers = unique(node_list))))
 
   killer <- future({
-    xxx <- future_map(c(1:length(unique(node_list))),
+    xxx <- furrr::future_map(c(1:length(unique(node_list))),
                       function(x) { names <- system("pidof R", intern=TRUE); system(paste0("kill ", names)); "done"})
     xxx})
   if (wait_until_resolved==TRUE) {
@@ -196,8 +196,8 @@ resources_to_df <- function(resource_string_list,
 
 #' Monitor resources use on cluster
 #'
-#' To-do: add docs \cr \cr
-#' The data comes from the linux command `ps` (specifically, "ps -u <username> -o pcpu,rss,size,state,time,cmd" ). If you want to know EXACTLY what each column means RTFM and type in `man ps` in a UNIX terminal.
+#' To-do: add better docs \cr \cr
+#' The data comes from the linux command `ps` (specifically, "ps -u <username> -o pcpu,rss,size,state,time,cmd" ). If you want to know EXACTLY what each column means RTFM and type in `man ps` in a UNIX terminal. See `Details` for more information about the data frame being saved.
 #'
 #'Each row is a process at a given time on a given node. \cr \cr
 #' **Columns:** \cr
@@ -217,7 +217,7 @@ resources_to_df <- function(resource_string_list,
 #' @param username_or_command The username you're using to log in to the remote server or, if you supply `command_maker=NULL` to the \dots, the command you want to call and check the results of. Just stick with your username. It's easier for everyone.
 #' @param login_node the name of the gateway node (e.g. 'zach@remote_back_up_server.server.com'). Should NOT be the same as the node you're using to run the other tasks.
 #' @param node_list a list of the nodes you want to monitor
-#' @param save_path the filename you want to save all this information to (on the remote server)
+#' @param save_path the filename you want to save all this information to (on the remote server). If NULL, it returns the future of the data frame it would normally save. **Choosing this option will overwrite the current `future` `plan`.**
 #' @param sleeping_time time between checks in seconds
 #' @param total_checks total number of checks
 #' @param \dots additional arguments supplied to `monitor_resources_on_node`
@@ -286,5 +286,48 @@ monitor_cluster_resources <- function(username_or_command,
     })
     results <- future(save_expr, substitute = FALSE)
     return("check it")
+  }
+}
+
+#' Plot current resource consumption
+#'
+#' Plots the total `RSS` and `%CPU` from \code{\link{monitor_cluster_resources}} at the current time. \cr \cr
+#' Basically, this is just a wrapper for \code{\link{monitor_cluster_resources}} that checks once, plots the results, and returns the data frame it used to plot them. It automatically filters out the `PID` of the monitoring processes.
+#' @return a dataframe
+#' @inheritParams monitor_cluster_resources
+#' @export
+snap_shot_activity <- function(username_or_command,
+                               login_node,
+                               node_list,
+                               ...) {
+  oplan <- plan()
+  on.exit(plan(oplan), add = TRUE)
+
+  res <- monitor_cluster_resources(
+    username_or_command = username_or_command,
+    login_node = login_node,
+    node_list = node_list,
+    save_path = NULL,
+    sleeping_time = 0,
+    total_checks = 1, ..., stop_file = NULL)
+  if (!cs:::wait_and_check(resolved(res), total_sleep_time=20))
+    stop("Timeout after 20 seconds")
+  df <- value(res) %>%
+    group_by(Nodename, SampleTime) %>%
+    filter(CMD =="R", PID != PIDofMonitor) %>%
+    summarise(Total_RSS = sum(as.numeric(RSS)),
+              Total_CPU_percentage = sum(as.numeric(`%CPU`)))
+
+  if (requireNamespace("ggplot2", quietly = TRUE)) {
+    df %>%
+      ggplot2::ggplot(ggplot2::aes(x=Nodename, y=Total_RSS, fill=Nodename)) +
+      ggplot2::geom_bar(stat="identity")
+    df %>%
+      ggplot2::ggplot(ggplot2::aes(x=Nodename, y=Total_CPU_percentage, fill=Nodename)) +
+      ggplot2::geom_bar(stat="identity")
+    df
+  } else {
+    warning("To automatically plot these conditions, `ggplot2` needs to be installed. The data frame is being returned instead.")
+    df
   }
 }
