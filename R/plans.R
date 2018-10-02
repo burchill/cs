@@ -357,16 +357,17 @@ get_node_data <- function(info_string, as_df=TRUE) {
     purrr::set_names(node_names) %>%
     purrr::map(function(info) {
       l <- list(state = stringr::str_match(info, "(?<=state = ).+")[1])
+      nps <- list(np = stringr::str_match(info, "(?<=np = )[0-9]+")[1])
       status <- stringr::str_match(info, "(?<=status = ).+") %>%
         stringr::str_split(",") %>% {
           val_pairs <- purrr::map(., function(x) {
-            stringr::str_split(x,"=")}) %>%
+            stringr::str_split(x, "=")}) %>%
             purrr::pluck(1)
           purrr::map(val_pairs, 2) %>%
             purrr::set_names(purrr::map(val_pairs, 1))
         }
 
-      if (!is.null(status) & length(status) > 1) { append(l, status) }
+      if (!is.null(status) & length(status) > 1) { append(l, nps, status) }
       else {l}
     })
   if (as_df==TRUE) {
