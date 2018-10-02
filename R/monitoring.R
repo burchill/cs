@@ -319,12 +319,12 @@ snap_shot_activity <- function(username_or_command,
               Total_CPU_percentage = sum(as.numeric(`%CPU`)))
 
   if (requireNamespace("ggplot2", quietly = TRUE)) {
-    df %>%
+    print(df %>%
       ggplot2::ggplot(ggplot2::aes(x=Nodename, y=Total_RSS, fill=Nodename)) +
-      ggplot2::geom_bar(stat="identity")
-    df %>%
+      ggplot2::geom_bar(stat="identity"))
+    print(df %>%
       ggplot2::ggplot(ggplot2::aes(x=Nodename, y=Total_CPU_percentage, fill=Nodename)) +
-      ggplot2::geom_bar(stat="identity")
+      ggplot2::geom_bar(stat="identity"))
     df
   } else {
     warning("To automatically plot these conditions, `ggplot2` needs to be installed. The data frame is being returned instead.")
