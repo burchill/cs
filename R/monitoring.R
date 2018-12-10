@@ -107,8 +107,8 @@ kill_r_on_nodes <- function(node_list, secondary_login_node,
   if (beep_on_end==TRUE)
     stopifnot(rlang::is_installed("beepr"))
   # Can't have this if we wan't to return a future
-  if (wait_until_resolved==TRUE) {
-    oplan <- plan()
+  if (wait_until_resolved == TRUE) {
+    oplan <- plan("list")
     on.exit(plan(oplan), add = TRUE)
   }
   plan(list(tweak(remote, workers = secondary_login_node),

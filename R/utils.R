@@ -9,13 +9,13 @@ done <- function(x) {
 
 #' @export
 # for my own purposes in using data frames as starting parameters for jobs
-iterate_over_df <- function(df, f, pf = purrr::map) {
+iterate_over_df <- function(df, pf, f) {
   stopifnot(length(formals(f)) == 1)
-  new_function <- function() x
-  formals(new_function) <- alist(".dontuse" = , ".dfdata" =)
+  formals(f) <- alist(".dontuse" = )
   orig_bod <- body(f)
-  new_bod <- substitute({ with(data = .dfdata[.dontuse, ], orig_bod ) })
-  body(new_function) <- new_bod
+  # gives a variable .orig_row if you want to use the original row
+  new_bod <- substitute({ .orig_row <- df[.dontuse, ]; with(data = df[.dontuse, ], orig_bod ) })
+  body(f) <- new_bod
 
-  pf(1:nrow(df), function(.swiz) new_function(.swiz, df))
+  pf(1:nrow(df), f)
 }

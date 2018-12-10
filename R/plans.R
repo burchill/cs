@@ -151,19 +151,17 @@ default_planner <- function(login_node, n,
 #' @export
 get_n_best_nodes <- function(login_node, n,
                              ...,
-                             use_abbreviations = TRUE) {
+                             use_abbreviations = TRUE,
+                             timeout_sec = 10) {
   stopifnot(!is.null(login_node))
   filterers <- rlang::enquos(...)
 
-  node_df <- get_nodes_info(login_node)
+  node_df <- get_nodes_info(login_node, timeout_sec = 10)
   node_df %>%
     # Make the data frame clean
     default_cleanup() %>%
     # Filter out the ones that are down/overused
     default_filter() %>%
-    # Presumably, we only get to use nodes 33-64...
-    # Nope!
-    # filter(number < 65) %>%
     # Custom filters
     filter(!!! filterers) %>%
     # Pick the n best
@@ -245,7 +243,8 @@ test_node <- function(nodename, login_node,
 test_nodes <- function(node_list, login_node,
                        timeout_sec = 5,
                        verbose = FALSE,
-                       .connection_timer = 3) {
+                       .connection_timer = 3,
+                       .debug = FALSE) {
   # Make sure there's a login node
   stopifnot(!is.null(login_node))
 
@@ -261,36 +260,52 @@ test_nodes <- function(node_list, login_node,
     stop("Can't even log in to login node, yo")
   message("Successful login to gateway node")
 
-  # Test the nodes
-  good_nodes <- future_map(
-    node_list,
-    function(n) {
-      zplyr::collect_all({
-        test_node(nodename = n,
-                  login_node = NA,
-                  timeout_sec = timeout_sec,
-                  .connection_timer = .connection_timer)
-      }, catchErrors = TRUE)
-    }) %>% purrr::set_names(node_list)
+  if (.debug==T) {
+    print("Debug mode on. Printing out more and going slower")
+    good_nodes <- c()
+    for (n in node_list) {
+      paste0("Testing node `", n, "`")
+      test_node_value %<-% {test_node(nodename = n,
+                                      login_node = NA,
+                                      timeout_sec = timeout_sec,
+                                      .connection_timer = .connection_timer)}
+      test_node_value <- ifelse(is.null(test_node_value) | is.na(test_node_value) |  test_node_value == FALSE,
+                                FALSE, TRUE)
+      good_nodes <- c(good_nodes, test_node_value)
+    }
+    good_nodes <- purrr::set_names(good_nodes, node_list)
+    print("Node values:")
+    print(good_nodes)
+  } else {
+    # Test the nodes
+    good_nodes <- future_map(
+      node_list,
+      function(n) {
+        zplyr::collect_all({
+          test_node(nodename = n,
+                    login_node = NA,
+                    timeout_sec = timeout_sec,
+                    .connection_timer = .connection_timer)
+        }, catchErrors = TRUE)
+      }) %>% purrr::set_names(node_list)
 
-  # If verbose
-  if (verbose==TRUE) {
-    good_nodes %>% message_collector(message, "Messages", "messages")
-    good_nodes %>% message_collector(warning, "Warnings", "warnings", call.=FALSE)
-    good_nodes %>% message_collector(warning, "Errors", "errors", call.=FALSE)
+    # If verbose
+    if (verbose==TRUE) {
+      good_nodes %>% message_collector(message, "Messages", "messages")
+      good_nodes %>% message_collector(warning, "Warnings", "warnings", call.=FALSE)
+      good_nodes %>% message_collector(warning, "Errors", "errors", call.=FALSE)
+    }
+
+    good_nodes <- map_lgl(
+      good_nodes,
+      function(n) {
+        if (is.null(n$value) | is.na(n$value)) FALSE
+        else n$value == TRUE })
   }
-
-  good_nodes <- map_lgl(
-    good_nodes,
-    function(n) {
-      if (is.null(n$value) | is.na(n$value)) FALSE
-      else n$value == TRUE })
 
   message(paste0("Bad nodes: ", paste0(node_list[!good_nodes], collapse=", ")))
   node_list[good_nodes]
 }
-
-
 
 
 #' Get the status of all the nodes
@@ -325,7 +340,7 @@ get_nodes_info <- function(login_node,
   # Change the plan
   plan(list(
     tweak(remote, workers = remote_login),
-    tweak(remote, workers = "node33")
+    tweak(remote, workers = check_node[[i]])
   ))
 
   node_text %2% { system("pbsnodes", intern = TRUE) %>% paste0(collapse="\n") }
@@ -367,7 +382,7 @@ get_node_data <- function(info_string, as_df=TRUE) {
             purrr::set_names(purrr::map(val_pairs, 1))
         }
 
-      if (!is.null(status) & length(status) > 1) { append(l, nps, status) }
+      if (!is.null(status) & length(status) > 1) { append(append(l, nps), status) }
       else {l}
     })
   if (as_df==TRUE) {
@@ -405,6 +420,8 @@ default_cleanup <- function(df) {
     mutate_at(vars(physmem:totmem),
               ~sub("kb", "", .)) %>%
     mutate_at(vars(loadave:nsessions), as.numeric) %>%
+    {if (length(.$np) > 0)  mutate(., np = as.numeric(np))
+     else . } %>%
     mutate(percent_free = availmem/totmem)
 }
 #' @rdname default_cleanup
