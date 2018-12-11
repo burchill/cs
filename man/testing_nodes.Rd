@@ -8,7 +8,7 @@
 test_node(nodename, login_node, timeout_sec, .connection_timer = 3)
 
 test_nodes(node_list, login_node, timeout_sec = 5, verbose = FALSE,
-  .connection_timer = 3)
+  .connection_timer = 3, .debug = FALSE)
 }
 \arguments{
 \item{nodename}{a string of the node to try to connect to}

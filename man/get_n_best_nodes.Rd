@@ -4,7 +4,8 @@
 \alias{get_n_best_nodes}
 \title{Returns the n best nodes}
 \usage{
-get_n_best_nodes(login_node, n, ..., use_abbreviations = TRUE)
+get_n_best_nodes(login_node, n, ..., use_abbreviations = TRUE,
+  timeout_sec = 10)
 }
 \description{
 To do: add documentation
