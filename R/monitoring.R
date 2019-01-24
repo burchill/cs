@@ -295,11 +295,13 @@ monitor_cluster_resources <- function(username_or_command,
 #' Basically, this is just a wrapper for \code{\link{monitor_cluster_resources}} that checks once, plots the results, and returns the data frame it used to plot them. It automatically filters out the `PID` of the monitoring processes.
 #' @return a dataframe
 #' @inheritParams monitor_cluster_resources
+#' @param .timeout The amount of seconds to wait before giving up
 #' @export
 snap_shot_activity <- function(username_or_command,
                                login_node,
                                node_list,
-                               ...) {
+                               ...,
+                               .timeout = 20) {
   oplan <- plan()
   on.exit(plan(oplan), add = TRUE)
 
@@ -310,8 +312,8 @@ snap_shot_activity <- function(username_or_command,
     save_path = NULL,
     sleeping_time = 0,
     total_checks = 1, ..., stop_file = NULL)
-  if (!cs:::wait_and_check(resolved(res), total_sleep_time=20))
-    stop("Timeout after 20 seconds")
+  if (!cs:::wait_and_check(resolved(res), total_sleep_time=.timeout))
+    stop("Timeout after ", .timeout, " seconds")
   df <- value(res) %>%
     group_by(Nodename, SampleTime) %>%
     filter(CMD =="R", PID != PIDofMonitor) %>%
