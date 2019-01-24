@@ -4,7 +4,8 @@
 \alias{snap_shot_activity}
 \title{Plot current resource consumption}
 \usage{
-snap_shot_activity(username_or_command, login_node, node_list, ...)
+snap_shot_activity(username_or_command, login_node, node_list, ...,
+  .timeout = 20)
 }
 \arguments{
 \item{username_or_command}{The username you're using to log in to the remote server or, if you supply \code{command_maker=NULL} to the \dots, the command you want to call and check the results of. Just stick with your username. It's easier for everyone.}
@@ -14,6 +15,8 @@ snap_shot_activity(username_or_command, login_node, node_list, ...)
 \item{node_list}{a list of the nodes you want to monitor}
 
 \item{...}{additional arguments supplied to \code{monitor_resources_on_node}}
+
+\item{.timeout}{The amount of seconds to wait before giving up}
 }
 \value{
 a dataframe
