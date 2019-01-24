@@ -252,6 +252,15 @@ signal_fm_conditions <- function(future_cnd_map_results, displayErrors = TRUE) {
         cat("Warnings in .x[", i, "]:\n", file=stderr(), sep="")
         purrr::walk(x$warnings, ~warn_now(.))
       }
+      if (length(x$conditions) > 0) {
+        cat("Misc. conditions in .x[", i, "]:\n", file=stderr(), sep="")
+        condition_string <- x$conditions %>%
+          purrr::reduce(
+            function(s, cond)
+              {paste0(s, trimws(cond$message, which="right"), "\n")}, .init="")
+        cat(condition_string, file=stderr())
+        purrr::walk(x$conditions, ~signalCondition(.))
+      }
       if (length(x$errors) > 0 && displayErrors == TRUE) {
         cat("Errors in .x[", i, "]:\n", file=stderr(), sep="")
         purrr::walk(x$errors, ~cat(.$message, file=stderr(), sep=""))
