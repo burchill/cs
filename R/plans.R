@@ -33,7 +33,7 @@ message_collector <- function(l, print_function, title,
 
 #' Assign futures from different levels of the topology
 #'
-#' Let's say you want to run a job on the bcs-cycle1 server, which
+#' Let's say you want to run a job on a node \emph{behind} a gateway server, which
 #' would require doing two nested future plans. Instead of having to
 #' type out something like: \code{x \%<-\% { y \%<-\% { 1 + 1 }; y}}, you can
 #' now just type \code{x \%2\% { 1 + 1 }}, which will run \code{1 + 1} on the
@@ -89,8 +89,6 @@ bcs_planner <- function(login_node,
                            "\n  tweak(remote, workers = \"bcs-cycle1.cs.rochester.edu\"),",
                            "\n  tweak(multiprocess, workers = ", core_function_expr, ")\n))")
   message(paste0("Running:\n", message_string))
-
-
 
   plan(list(
     tweak(remote, workers = login_node),
@@ -167,6 +165,8 @@ get_n_best_nodes <- function(login_node, n,
     # Pick the n best
     pick_n_best_nodes(n)
 }
+
+
 #' Test nodes' connectivity
 #'
 #' Test and see if a node is reachable by actually trying to connect to them.
