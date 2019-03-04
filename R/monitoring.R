@@ -3,7 +3,7 @@ check_multisession_hierarchy <- function() {
   if (!("multisession" %in% attr(oplan[[1]], "class")))
     stop("`multisession` needs to be the top plan")
   if (length(oplan) < 2)
-    stop("The plan needs to be more than one level for embedding")
+    stop("The plan needs to have more than one level for embedding")
 }
 
 #' Make sound when future is resolved
