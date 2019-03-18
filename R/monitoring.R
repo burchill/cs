@@ -252,7 +252,7 @@ monitor_cluster_resources <- function(username_or_command,
   stopifnot(rlang::is_installed("furrr"))
   # in case you want to just save something,
   #   this will automaticall revert to the previous plan when done
-  oplan <- plan()
+  oplan <- plan("list")
 
   # Only visit each node once
   plan(list(
@@ -302,7 +302,7 @@ snap_shot_activity <- function(username_or_command,
                                node_list,
                                ...,
                                .timeout = 20) {
-  oplan <- plan()
+  oplan <- plan("list")
   on.exit(plan(oplan), add = TRUE)
 
   res <- monitor_cluster_resources(

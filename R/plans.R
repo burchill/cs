@@ -83,7 +83,7 @@ bcs_planner <- function(login_node,
   }
 
   # original plan
-  oplan <- plan()
+  oplan <- plan("list")
 
   message_string <- paste0("plan(list(\n  tweak(remote, workers = \"", login_node, "\"),",
                            "\n  tweak(remote, workers = \"bcs-cycle1.cs.rochester.edu\"),",
@@ -193,7 +193,7 @@ test_node <- function(nodename, login_node,
   # If you're not logged in already from a server:
   else {
     da_plan <- list(tweak(remote, workers = login_node), tweak(remote, workers = nodename))
-    oplan <- plan()
+    oplan <- plan("list")
     on.exit(plan(oplan), add = TRUE)
   }
 
@@ -249,7 +249,7 @@ test_nodes <- function(node_list, login_node,
   stopifnot(!is.null(login_node))
 
   # After we're done getting the information, revert to the original plan
-  oplan <- plan()
+  oplan <- plan("list")
   on.exit(plan(oplan), add = TRUE)
 
   # This checks to see that we can login
@@ -322,7 +322,7 @@ get_nodes_info <- function(login_node,
                            check_node=c("node64", "node33", "node34"),
                            timeout_sec = 10) {
   # After we're done getting the information, revert to the original plan
-  oplan <- plan()
+  oplan <- plan("list")
   on.exit(plan(oplan), add = TRUE)
   # Generally not needed, but will iterate through check nodes!
   i <- 1
