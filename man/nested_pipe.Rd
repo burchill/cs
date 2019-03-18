@@ -10,7 +10,7 @@ x \%2\% value
 x \%3\% value
 }
 \description{
-Let's say you want to run a job on the bcs-cycle1 server, which
+Let's say you want to run a job on a node \emph{behind} a gateway server, which
 would require doing two nested future plans. Instead of having to
 type out something like: \code{x \%<-\% { y \%<-\% { 1 + 1 }; y}}, you can
 now just type \code{x \%2\% { 1 + 1 }}, which will run \code{1 + 1} on the
