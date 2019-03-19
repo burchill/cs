@@ -68,7 +68,9 @@ collect_decorator <- function(f, indices = 1:4, asStrings = TRUE) {
     zplyr::collect_all(
       bod,
       catchErrors = TRUE,
-      asStrings = asStrings)[indices])
+      asStrings = asStrings)[indices],
+    list(asStrings = asStrings, indices = indices, bod=bod))
+  environment(newfie) <- environment(f)
   return(newfie)
 }
 
