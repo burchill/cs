@@ -301,7 +301,7 @@ snap_shot_activity <- function(username_or_command,
                                login_node,
                                node_list,
                                ...,
-                               .timeout = 20) {
+                               .timeout = 30) {
   oplan <- plan("list")
   on.exit(plan(oplan), add = TRUE)
 
