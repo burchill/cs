@@ -11,8 +11,7 @@ x \%beep\% value
 x \%sayname\% value
 
 futureBeep(expr, envir = parent.frame(), substitute = TRUE,
-  globals = TRUE, packages = NULL, lazy = FALSE, seed = NULL,
-  evaluator = plan("next"), ...,
+  globals = TRUE, packages = NULL, lazy = FALSE, seed = NULL, ...,
   .beep_sound = getOption("default.beepsound", 1), .sleep_interval = 3)
 }
 \description{

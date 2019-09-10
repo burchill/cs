@@ -66,34 +66,46 @@ check_multisession_hierarchy <- function() {
 #' @rdname beeper
 #' @export
 futureBeep <- function (expr, envir = parent.frame(), substitute = TRUE, globals = TRUE,
-                        packages = NULL, lazy = FALSE, seed = NULL, evaluator = plan("next"),
-                        ...,
+                        packages = NULL, lazy = FALSE, seed = NULL, ...,
                         .beep_sound = getOption("default.beepsound", 1),
-                        .sleep_interval = 3) {
+                        .sleep_interval = 3)
+{
   warn_about_package("beepr")
   check_multisession_hierarchy()
 
   if (substitute)
     expr <- substitute(expr)
+
+  makeFuture <- list(...)$evaluator
+
+  if (!is.null(makeFuture)) {
+    action <- get(Sys.getenv("R_CHECK_FUTURE_EVALUATOR", ".Deprecated"), mode = "function")
+    action(msg = "Argument 'evaluator' of future() was an internal argument and is now deprecated. Use plan() to set the \"evaluator\".")
+  }
+  if (is.null(makeFuture))
+    makeFuture <- future::plan("next")
+  if (!is.function(makeFuture)) {
+    stop("Argument 'evaluator' must be a function: ", typeof(makeFuture))
+  }
+  .makeFuture <- function(..., evaluator = NULL) makeFuture(...)
+
   big_expr <- substitute({
-    .qua <- future::future(expr, envir, substitute, globals, packages, lazy, seed, evaluator, ...)
+    .qua <- future::future(expr = expr, envir = envir, substitute = substitute, globals = globals, packages = packages, lazy = lazy, seed = seed, ...)
     while(!resolved(.qua)) Sys.sleep(.sleep_interval)
     beepr::beep(.beep_sound)
     value(.qua)
   })
-  if (!is.function(evaluator)) {
-    stop("Argument 'evaluator' must be a function: ", typeof(evaluator))
-  }
-  future <- evaluator(big_expr, envir = envir, substitute = FALSE,
-                      lazy = lazy, seed = seed, globals = globals, packages = packages,
-                      ...)
+
+  future <- .makeFuture(big_expr, substitute = FALSE, envir = envir,
+                        globals = globals, packages = packages, seed = seed,
+                        lazy = lazy, ...)
+
   if (!inherits(future, "Future")) {
-    stop("Argument 'evaluator' specifies a function that does not return a Future object: ",
-         paste(sQuote(class(future)), collapse = ", "))
+    stop(FutureError("Argument 'evaluator' specifies a function that does not return a Future object: ",
+                     paste(sQuote(class(future)), collapse = ", ")))
   }
   future
 }
-
 
 #' Kill R processes on nodes
 #'
