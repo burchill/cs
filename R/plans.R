@@ -273,7 +273,7 @@ test_nodes <- function(node_list, login_node,
     print("Debug mode on. Printing out more and going slower")
     good_nodes <- c()
     for (n in node_list) {
-      paste0("Testing node `", n, "`")
+      print(paste0("Testing node `", n, "`"))
       test_node_value %<-% {test_node(nodename = n,
                                       login_node = NA,
                                       timeout_sec = timeout_sec,
