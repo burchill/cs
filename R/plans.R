@@ -185,36 +185,45 @@ get_n_best_nodes <- function(login_node, n,
 #' @export
 test_node <- function(nodename, login_node,
                       timeout_sec, .connection_timer = 3) {
-  stopifnot(!is.null(login_node))
+  tryCatch({
+    stopifnot(!is.null(login_node))
 
-  # if you're already on the login node, this should be NA
-  if (is.na(login_node))
-    da_plan <- list(tweak(remote, workers = nodename))
-  # If you're not logged in already from a server:
-  else {
-    da_plan <- list(tweak(remote, workers = login_node), tweak(remote, workers = nodename))
-    oplan <- plan("list")
-    on.exit(plan(oplan), add = TRUE)
-  }
-
-  plan(multisession)
-  # This makes sure that there's never a delay *trying* to connect (ie in `plan(da_plan)`)
-  outer_test %<-% {
-    plan(da_plan)
+    # if you're already on the login node, this should be NA
     if (is.na(login_node))
-      tester %<-% { "a" }
-    else
-      tester %2% { "a" }
-    tester_fut <- futureOf(tester)
-    # This waits until tester is resolved or total_sleep_time elapses
-    its_resolved <- wait_and_check(resolved(tester_fut), total_sleep_time = timeout_sec)
-    if (its_resolved) tester
-    else FALSE
+      da_plan <- list(tweak(remote, workers = nodename))
+    # If you're not logged in already from a server:
+    else {
+      da_plan <- list(tweak(remote, workers = login_node), tweak(remote, workers = nodename))
+      oplan <- plan("list")
+      on.exit(plan(oplan), add = TRUE)
+    }
+
+    plan(multisession)
+    # This makes sure that there's never a delay *trying* to connect (ie in `plan(da_plan)`)
+    outer_test %<-% {
+      plan(da_plan)
+      if (is.na(login_node))
+        tester %<-% { "a" }
+      else
+        tester %2% { "a" }
+      tester_fut <- futureOf(tester)
+      # This waits until tester is resolved or total_sleep_time elapses
+      its_resolved <- wait_and_check(resolved(tester_fut), total_sleep_time = timeout_sec)
+      if (its_resolved) tester
+      else FALSE
+    }
+
+    fut <- futureOf(outer_test)
+    its_resolved <- wait_and_check(resolved(fut), total_sleep_time = .connection_timer + timeout_sec)
+    if (its_resolved && outer_test=="a") return(TRUE)
+    else return(FALSE)
+  },
+  error = function(err) {
+    warning("Error raised in testing node '", nodename, "': ", err$message,
+            immediate. = TRUE, call.=FALSE)
+    return(FALSE)
   }
-  fut <- futureOf(outer_test)
-  its_resolved <- wait_and_check(resolved(fut), total_sleep_time = .connection_timer + timeout_sec)
-  if (its_resolved && outer_test=="a") return(TRUE)
-  else return(FALSE)
+  )
 }
 # # The older design
 # test_node <- function(nodename, login_node, timeout_sec) {
