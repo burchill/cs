@@ -60,75 +60,11 @@ message_collector <- function(l, print_function, title,
   future:::futureAssignInternal(target, expr, envir = envir, substitute = FALSE)
 }
 
-
-#' The default way to make multiprocess plans for the bcs-cycle1 server
-#'
-#' If one wants to run jobs on the bcs-cycle1 server.
-#'
-#' @param login_node a string for the gateway login, e.g., \"zachburchill@cycle1.cs.rochester.edu\"
-#' @param core_function the function determining the number of cores to use on the server. By default, it is the default of `multiprocess`. You can specify a custom function or just set a number yourself
-#' @param backoff_threshold the threshold of percentage of available memory below which the connection is cancelled
-#' @export
-bcs_planner <- function(login_node,
-                        core_function = future::availableCores,
-                        backoff_threshold = 0.7) {
-  core_function_expr <- quo_name(enquo(core_function))
-
-  # Make it callable if it's, say, a number
-  if (!rlang::is_callable(core_function)) {
-    temp_val <- core_function
-    core_function <- function() return(temp_val)
-  } else {
-    core_function_expr <- paste0(core_function_expr, "()")
-  }
-
-  # original plan
-  oplan <- plan("list")
-
-  message_string <- paste0("plan(list(\n  tweak(remote, workers = \"", login_node, "\"),",
-                           "\n  tweak(remote, workers = \"bcs-cycle1.cs.rochester.edu\"),",
-                           "\n  tweak(multiprocess, workers = ", core_function_expr, ")\n))")
-  message(paste0("Running:\n", message_string))
-
-  plan(list(
-    tweak(remote, workers = login_node),
-    tweak(remote, workers = "bcs-cycle1.cs.rochester.edu"),
-    tweak(multiprocess, workers = core_function())
-  ))
-
-  server_detes %<-% {
-    y %<-% {
-      system("free", intern = TRUE) %>%
-        paste0(collapse="") %>%
-        { gsub("\\s+", " ", .) } %>%
-        stringr::str_match("(?<=Mem: )[0-9]+ [0-9]+") %>%
-        purrr::pluck(1) %>% {
-          vals <- as.numeric(strsplit(., " ")[[1]])
-          1 - (vals[2]/vals[1])
-        } %>%
-        c(availableCores(), core_function())
-    }
-    y
-  }
-  free_mem <- server_detes[1]
-  avail <- server_detes[2]
-  using <- server_detes[3]
-  message(paste0(round(free_mem*100), "% of memory available on server. ",
-                 avail, " cores available, using: ", using))
-  if (free_mem < backoff_threshold) {
-    on.exit(plan(oplan), add = TRUE)
-    stop(paste0("% of memory available less than ",
-                round(backoff_threshold*100), ". Backing off and reverting to previous plan"))
-  }
-  return_null <- NULL
-}
-
-
 #' The default way to start a cluster plan
 #'
 #' Runs `future`'s plan, in a way that works well with the Rochester cluster nodes
 #'
-#' @param login_node a string for the gateway login, e.g., \"zachburchill@cycle1.cs.rochester.edu\"
+#' @param login_node a string for the gateway login, e.g., \"zacharyburchill@gateway.rochester.edu\" (not real)
 #' @param n the number of clusters to use
 #' @param \dots additional bare arguments for `filter()`
 #' @param use_abbreviations because the way ssh adds known hosts, if you've only sshed into a node via `ssh nodeN`, you'll want to set this to `TRUE`
@@ -174,7 +110,7 @@ get_n_best_nodes <- function(login_node, n,
 #' `test_node` is for individual nodes. `test_nodes` takes a list of node names, tests each of them, and returns a list of the ones that work.
 #'
 #'
-#' @param login_node a string for the gateway login, e.g., \"zachburchill@cycle1.cs.rochester.edu\"
+#' @param login_node a string for the gateway login, e.g., \"zacharyburchill@gateway.rochester.edu\" (not real)
 #' @param timeout_sec the number of seconds to wait after trying to connect to a node before declaring it dead
 #' @param .connection_timer the number of additional seconds to wait before declaring that the \emph{attempt} to connect to the node was unsuccessful
 #' @param nodename a string of the node to try to connect to
@@ -321,9 +257,10 @@ test_nodes <- function(node_list, login_node,
 #'
 #' Finds the statuses of all the nodes in the cluster via logging in and
 #' running `pbsnodes` on one of the nodes, and then parsing that information
-#' into a data frame.
+#' into a data frame. \cr \cr **NOTE: This only works with a cluster that has `pbsnodes` set up and
+#' working in a particular format.** This is completely untested with other clusters.
 #'
-#' @param login_node a string for the gateway login, e.g., \"zachburchill@cycle1.cs.rochester.edu\"
+#' @param login_node a string for the gateway login, e.g., \"zacharyburchill@gateway.rochester.edu\" (not real)
 #' @param check_node the name of any "nodeN" hostnames, to get the data from. Will iterate through until it finds one that works.
 #' @return A data frame with all the node information
 #' @export
@@ -348,14 +285,14 @@ get_nodes_info <- function(login_node,
   }
   # Change the plan
   plan(list(
-    tweak(remote, workers = remote_login),
+    tweak(remote, workers = login_node),
     tweak(remote, workers = check_node[[i]])
   ))
 
   node_text %2% { system("pbsnodes", intern = TRUE) %>% paste0(collapse="\n") }
 
   if (node_text=="")
-    stop("Seems like the pbsnodes system is down (ie node64). Try it manually!")
+    stop("Seems like the pbsnodes system is down (i.e., node64). Try it manually!")
 
   get_node_data(node_text)
 }
@@ -499,7 +436,7 @@ name_if_possible <- function(x, nm = x, ...) {
 #' custom core-setting functions with \`function()\`.
 #'
 #' @param df a vector/list of node hostnames or a data frame with a column called "nodes" that has the same information
-#' @param login_node a string for the gateway login, e.g., \"zachburchill@cycle1.cs.rochester.edu\"
+#' @param login_node a string for the gateway login, e.g., \"zacharyburchill@gateway.rochester.edu\" (not real)
 #' @param core_mapper if `NULL`, the `multiprocess` plan uses its default arguments. If a function, `core_mapper` determines the number of cores used for each machine. If a list/vector, it will be assumed to be the number of cores for each particular node, in the same order as the nodes were given. `nodes_to_plan` will then convert this into a function automatically.
 #' @param goahead indicates whether this function should execute the plan or just return an expression representing the plan
 #' @param use_abbreviations because the way ssh adds known hosts, if you've only sshed into a node via `ssh nodeN`, you'll want to set this to `TRUE`
