@@ -4,11 +4,11 @@
 \alias{get_nodes_info}
 \title{Get the status of all the nodes}
 \usage{
-get_nodes_info(login_node, check_node = c("node64", "node33", "node34"),
+get_nodes_info(login_node, check_node = c("node33", "node34", "node64"),
   timeout_sec = 10)
 }
 \arguments{
-\item{login_node}{a string for the gateway login, e.g., "zachburchill@cycle1.cs.rochester.edu"}
+\item{login_node}{a string for the gateway login, e.g., "zacharyburchill@gateway.rochester.edu" (not real)}
 
 \item{check_node}{the name of any "nodeN" hostnames, to get the data from. Will iterate through until it finds one that works.}
 }
@@ -18,5 +18,6 @@ A data frame with all the node information
 \description{
 Finds the statuses of all the nodes in the cluster via logging in and
 running \code{pbsnodes} on one of the nodes, and then parsing that information
-into a data frame.
+into a data frame. \cr \cr \strong{NOTE: This only works with a cluster that has \code{pbsnodes} set up and
+working in a particular format.} This is completely untested with other clusters.
 }

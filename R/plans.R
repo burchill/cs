@@ -265,7 +265,7 @@ test_nodes <- function(node_list, login_node,
 #' @return A data frame with all the node information
 #' @export
 get_nodes_info <- function(login_node,
-                           check_node=c("node64", "node33", "node34"),
+                           check_node=c("node33", "node34", "node64"),
                            timeout_sec = 10) {
   # After we're done getting the information, revert to the original plan
   oplan <- plan("list")

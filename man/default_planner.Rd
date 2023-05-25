@@ -7,7 +7,7 @@
 default_planner(login_node, n, ...)
 }
 \arguments{
-\item{login_node}{a string for the gateway login, e.g., "zachburchill@cycle1.cs.rochester.edu"}
+\item{login_node}{a string for the gateway login, e.g., "zacharyburchill@gateway.rochester.edu" (not real)}
 
 \item{n}{the number of clusters to use}
 

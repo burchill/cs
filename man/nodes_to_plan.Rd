@@ -8,7 +8,7 @@ nodes_to_plan(nodes, login_node, core_mapper = NULL, goahead = TRUE,
   use_abbreviations = TRUE)
 }
 \arguments{
-\item{login_node}{a string for the gateway login, e.g., "zachburchill@cycle1.cs.rochester.edu"}
+\item{login_node}{a string for the gateway login, e.g., "zacharyburchill@gateway.rochester.edu" (not real)}
 
 \item{core_mapper}{if \code{NULL}, the \code{multiprocess} plan uses its default arguments. If a function, \code{core_mapper} determines the number of cores used for each machine. If a list/vector, it will be assumed to be the number of cores for each particular node, in the same order as the nodes were given. \code{nodes_to_plan} will then convert this into a function automatically.}
 

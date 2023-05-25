@@ -13,7 +13,7 @@ test_nodes(node_list, login_node, timeout_sec = 5, verbose = FALSE,
 \arguments{
 \item{nodename}{a string of the node to try to connect to}
 
-\item{login_node}{a string for the gateway login, e.g., "zachburchill@cycle1.cs.rochester.edu"}
+\item{login_node}{a string for the gateway login, e.g., "zacharyburchill@gateway.rochester.edu" (not real)}
 
 \item{timeout_sec}{the number of seconds to wait after trying to connect to a node before declaring it dead}
 
