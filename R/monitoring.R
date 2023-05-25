@@ -91,9 +91,9 @@ futureBeep <- function (expr, envir = parent.frame(), substitute = TRUE, globals
 
   big_expr <- substitute({
     .qua <- future::future(expr = expr, envir = envir, substitute = substitute, globals = globals, packages = packages, lazy = lazy, seed = seed, ...)
-    while(!resolved(.qua)) Sys.sleep(.sleep_interval)
+    while(!future::resolved(.qua)) Sys.sleep(.sleep_interval)
     beepr::beep(.beep_sound)
-    value(.qua)
+    future::value(.qua)
   })
 
   future <- .makeFuture(big_expr, substitute = FALSE, envir = envir,
@@ -101,7 +101,7 @@ futureBeep <- function (expr, envir = parent.frame(), substitute = TRUE, globals
                         lazy = lazy, ...)
 
   if (!inherits(future, "Future")) {
-    stop(FutureError("Argument 'evaluator' specifies a function that does not return a Future object: ",
+    stop(future::FutureError("Argument 'evaluator' specifies a function that does not return a Future object: ",
                      paste(sQuote(class(future)), collapse = ", ")))
   }
   future
